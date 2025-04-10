@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Link Extractor</title>
+    <style>
+        :root {
+            --bg-primary: #121212;
+            --bg-secondary: #1e1e1e;
+            --bg-tertiary: #2a2a2a;
+            --text-primary: #e0e0e0;
+            --text-secondary: #aaaaaa;
+            --accent: #5D5CDE;
+            --accent-hover: #4a49bb;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --warning: #f39c12;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            padding: 1rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 1.5rem;
+        }
+
+        h1 {
+            color: var(--text-primary);
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        h2 {
+            color: var(--text-primary);
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .panel {
+            background-color: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 1rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .input-panel, .options-panel {
+            margin-bottom: 1rem;
+        }
+
+        .input-panel {
+            padding-bottom: 0.75rem;
+        }
+
+        .input-tabs {
+            display: flex;
+            margin-bottom: 0.75rem;
+            border-bottom: 1px solid var(--bg-tertiary);
+        }
+
+        .tab {
+            padding: 0.4rem 0.75rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab.active {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        textarea, input[type="text"], input[type="url"] {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: var(--bg-tertiary);
+            border: 1px solid #333;
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 16px;
+            margin-bottom: 1rem;
+            resize: vertical;
+        }
+
+        textarea {
+            min-height: 80px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--accent-hover);
+        }
+
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+
+        .file-upload {
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .file-upload input[type="file"] {
+            position: absolute;
+            font-size: 100px;
+            opacity: 0;
+            right: 0;
+            top: 0;
+            cursor: pointer;
+        }
+
+        .file-label {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background-color: var(--bg-tertiary);
+            border: 1px solid #333;
+            border-radius: 4px;
+            cursor: pointer;
+            width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .filter-section {
+            margin-bottom: 1rem;
+        }
+
+        .filter-item {
+            display: flex;
+            margin-bottom: 0.5rem;
+        }
+
+        .filter-item input {
+            flex-grow: 1;
+            margin-right: 0.5rem;
+        }
+
+        .filter-item button {
+            background-color: var(--danger);
+            padding: 0.25rem 0.5rem;
+        }
+
+        .filter-item button:hover {
+            background-color: #c0392b;
+        }
+
+        .add-filter-btn {
+            margin-top: 0.5rem;
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .option-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .option-row label {
+            margin-bottom: 0;
+            margin-left: 0.5rem;
+        }
+
+        .links-container {
+            max-height: 500px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+            border: 1px solid var(--bg-tertiary);
+            border-radius: 4px;
+            padding: 0.5rem;
+            background-color: var(--bg-tertiary);
+        }
+
+        .links-list {
+            list-style-type: none;
+        }
+
+        .link-item {
+            padding: 0.5rem;
+            border-bottom: 1px solid #333;
+            word-break: break-all;
+            position: relative;
+            padding-right: 30px;
+        }
+
+        .link-item:last-child {
+            border-bottom: none;
+        }
+
+        .link-item a {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .link-item a:hover {
+            text-decoration: underline;
+        }
+
+        .link-actions {
+            position: absolute;
+            right: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            gap: 4px;
+        }
+
+        .link-actions button {
+            padding: 2px 6px;
+            font-size: 12px;
+            background-color: transparent;
+            color: var(--text-secondary);
+            border: 1px solid #333;
+        }
+
+        .link-actions button:hover {
+            background-color: var(--bg-secondary);
+        }
+
+        .stats {
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            background-color: var(--bg-tertiary);
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        @media screen and (max-width: 768px) {
+            .action-buttons {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .alert {
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .alert-danger {
+            background-color: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+
+        .alert-success {
+            background-color: rgba(46, 204, 113, 0.2);
+            color: #2ecc71;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+        }
+
+        .alert-warning {
+            background-color: rgba(243, 156, 18, 0.2);
+            color: #f39c12;
+            border: 1px solid rgba(243, 156, 18, 0.3);
+        }
+
+        .loading {
+            border: 2px solid var(--bg-tertiary);
+            border-top: 2px solid var(--accent);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: none;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.1rem 0.5rem;
+            font-size: 0.75rem;
+            background-color: var(--accent);
+            color: white;
+            border-radius: 10px;
+            margin-left: 0.5rem;
+        }
+
+        .spinner-container {
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            margin-left: 5px;
+        }
+
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.8rem;
+        }
+
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Progress bar styles */
+        .progress-container {
+            width: 100%;
+            height: 8px;
+            background-color: var(--bg-tertiary);
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--accent);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* Switch toggle */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 22px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #444;
+            transition: .4s;
+            border-radius: 22px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent);
+        }
+
+        input:focus + .slider {
+            box-shadow: 0 0 1px var(--accent);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(18px);
+        }
+
+        /* Responsive adjustments */
+        @media screen and (max-width: 768px) {
+            .action-buttons {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        
+        @media screen and (max-width: 480px) {
+            .action-buttons {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Context menu */
+        .context-menu {
+            position: absolute;
+            z-index: 10;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--bg-tertiary);
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            display: none;
+        }
+
+        .context-menu-option {
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        .context-menu-option:hover {
+            background-color: var(--bg-tertiary);
+        }
+
+        .helper-text {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: -0.5rem;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Advanced Link Extractor</h1>
+        <p>Extract and manage links from URLs, text, or files</p>
+    </header>
+
+    <div class="alert alert-danger" id="error-alert"></div>
+    <div class="alert alert-success" id="success-alert"></div>
+    <div class="alert alert-warning" id="warning-alert"></div>
+
+    <div class="container">
+        <div class="panel input-panel">
+            <div class="input-tabs">
+                <div class="tab active" data-tab="url-tab">URL</div>
+                <div class="tab" data-tab="text-tab">Text</div>
+                <div class="tab" data-tab="file-tab">File</div>
+            </div>
+
+            <div class="tab-content active" id="url-tab">
+                <label for="url-input">Enter URL to extract links from:</label>
+                <input type="url" id="url-input" placeholder="https://example.com" autocomplete="off">
+                <div class="helper-text">
+                    Note: Due to browser security restrictions, some URLs may not work directly.
+                </div>
+            </div>
+
+            <div class="tab-content" id="text-tab">
+                <label for="text-input">Paste text containing links:</label>
+                <textarea id="text-input" placeholder="Paste your text here..."></textarea>
+            </div>
+
+            <div class="tab-content" id="file-tab">
+                <label>Upload a file containing links:</label>
+                <div class="file-upload">
+                    <span class="file-label" id="file-name">No file selected</span>
+                    <input type="file" id="file-input" accept=".txt,.html,.htm,.md,.xml,.json">
+                </div>
+                <div class="helper-text">
+                    Supported formats: .txt, .html, .htm, .md, .xml, .json
+                </div>
+            </div>
+
+            <div class="progress-container" id="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+
+            <button id="extract-btn" class="primary-btn">
+                <span>Extract Links</span>
+                <span class="loading" id="loading-spinner"></span>
+            </button>
+        </div>
+
+        <div class="panel options-panel">
+            <h2>Options</h2>
+
+            <div class="filter-section">
+                <label>Domain Filters (domains to exclude):</label>
+                <div id="domain-filters">
+                    <!-- Domain filters will be added here dynamically -->
+                </div>
+                <button class="add-filter-btn" id="add-domain-filter">+ Add Domain Filter</button>
+            </div>
+
+            <div class="filter-section">
+                <label>Keyword Filters (URLs containing these keywords will be excluded):</label>
+                <div id="keyword-filters">
+                    <!-- Keyword filters will be added here dynamically -->
+                </div>
+                <button class="add-filter-btn" id="add-keyword-filter">+ Add Keyword Filter</button>
+            </div>
+
+            <div class="filter-section">
+                <div class="option-row">
+                    <label class="switch">
+                        <input type="checkbox" id="remove-duplicates" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <label for="remove-duplicates">Remove duplicate links</label>
+                </div>
+
+                <div class="option-row">
+                    <label class="switch">
+                        <input type="checkbox" id="normalize-urls" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <label for="normalize-urls">Normalize URLs (add https:// if missing)</label>
+                </div>
+
+                <div class="option-row">
+                    <label class="switch">
+                        <input type="checkbox" id="verify-links">
+                        <span class="slider"></span>
+                    </label>
+                    <label for="verify-links">Verify link validity</label>
+                    <div class="tooltip">ⓘ
+                        <span class="tooltiptext">Warning: This may be slow for many links and may not work for all URLs due to CORS restrictions</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <label for="sort-by">Sort links by:</label>
+                <select id="sort-by" class="form-control">
+                    <option value="none">No sorting</option>
+                    <option value="alphabetical">Alphabetical (A-Z)</option>
+                    <option value="alphabetical-reverse">Alphabetical (Z-A)</option>
+                    <option value="length">Length (shortest first)</option>
+                    <option value="length-reverse">Length (longest first)</option>
+                    <option value="domain">Domain</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="panel results-panel">
+            <h2>Extracted Links <span class="badge" id="links-count">0</span></h2>
+            
+            <div class="stats" id="stats-container">
+                No links extracted yet.
+            </div>
+
+            <div class="links-container">
+                <ul class="links-list" id="links-list">
+                    <!-- Links will be added here -->
+                </ul>
+            </div>
+
+            <div class="action-buttons">
+                <button id="save-to-file">Save to Text File</button>
+                <button id="copy-all">Copy All Links</button>
+                <button id="clear-results">Clear Results</button>
+                <button id="apply-filters">Apply Filters</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Context menu -->
+    <div class="context-menu" id="context-menu">
+        <div class="context-menu-option" data-action="open">Open Link</div>
+        <div class="context-menu-option" data-action="copy">Copy Link</div>
+        <div class="context-menu-option" data-action="remove">Remove Link</div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM elements
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const extractBtn = document.getElementById('extract-btn');
+            const urlInput = document.getElementById('url-input');
+            const textInput = document.getElementById('text-input');
+            const fileInput = document.getElementById('file-input');
+            const fileName = document.getElementById('file-name');
+            const linksList = document.getElementById('links-list');
+            const linksCount = document.getElementById('links-count');
+            const statsContainer = document.getElementById('stats-container');
+            const saveToFileBtn = document.getElementById('save-to-file');
+            const copyAllBtn = document.getElementById('copy-all');
+            const clearResultsBtn = document.getElementById('clear-results');
+            const applyFiltersBtn = document.getElementById('apply-filters');
+            const addDomainFilterBtn = document.getElementById('add-domain-filter');
+            const addKeywordFilterBtn = document.getElementById('add-keyword-filter');
+            const domainFilters = document.getElementById('domain-filters');
+            const keywordFilters = document.getElementById('keyword-filters');
+            const removeDuplicatesCheckbox = document.getElementById('remove-duplicates');
+            const normalizeUrlsCheckbox = document.getElementById('normalize-urls');
+            const verifyLinksCheckbox = document.getElementById('verify-links');
+            const sortBySelect = document.getElementById('sort-by');
+            const loadingSpinner = document.getElementById('loading-spinner');
+            const progressContainer = document.getElementById('progress-container');
+            const progressBar = document.getElementById('progress-bar');
+            const errorAlert = document.getElementById('error-alert');
+            const successAlert = document.getElementById('success-alert');
+            const warningAlert = document.getElementById('warning-alert');
+            const contextMenu = document.getElementById('context-menu');
+
+            // State variables
+            let extractedLinks = [];
+            let currentActiveTab = 'url-tab';
+
+            // Tab switching
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(tc => tc.classList.remove('active'));
+                    
+                    tab.classList.add('active');
+                    const tabId = tab.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                    currentActiveTab = tabId;
+                });
+            });
+
+            // File input handler
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    fileName.textContent = this.files[0].name;
+                } else {
+                    fileName.textContent = 'No file selected';
+                }
+            });
+
+            // Add domain filter
+            addDomainFilterBtn.addEventListener('click', () => {
+                addFilterItem(domainFilters, 'domain-filter');
+            });
+
+            // Add keyword filter
+            addKeywordFilterBtn.addEventListener('click', () => {
+                addFilterItem(keywordFilters, 'keyword-filter');
+            });
+
+            // Add initial filter items
+            addFilterItem(domainFilters, 'domain-filter');
+            addFilterItem(keywordFilters, 'keyword-filter');
+
+            // Extract links button click
+            extractBtn.addEventListener('click', async () => {
+                clearAlerts();
+                showLoading(true);
+                
+                try {
+                    let links = [];
+                    
+                    switch (currentActiveTab) {
+                        case 'url-tab':
+                            if (!urlInput.value.trim()) {
+                                showError('Please enter a URL');
+                                return;
+                            }
+                            links = await extractLinksFromUrl(urlInput.value.trim());
+                            break;
+                        case 'text-tab':
+                            if (!textInput.value.trim()) {
+                                showError('Please enter some text');
+                                return;
+                            }
+                            links = extractLinksFromText(textInput.value);
+                            break;
+                        case 'file-tab':
+                            if (!fileInput.files.length) {
+                                showError('Please select a file');
+                                return;
+                            }
+                            links = await extractLinksFromFile(fileInput.files[0]);
+                            break;
+                    }
+                    
+                    processExtractedLinks(links);
+                    showSuccess(`Successfully extracted ${links.length} links`);
+                } catch (error) {
+                    showError('Error extracting links: ' + error.message);
+                    console.error(error);
+                } finally {
+                    showLoading(false);
+                }
+            });
+
+            // Save to file
+            saveToFileBtn.addEventListener('click', () => {
+                if (extractedLinks.length === 0) {
+                    showWarning('No links to save');
+                    return;
+                }
+                
+                const text = extractedLinks.join('\n');
+                const blob = new Blob([text], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'extracted_links.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showSuccess('Links saved to file');
+            });
+
+            // Copy all links
+            copyAllBtn.addEventListener('click', () => {
+                if (extractedLinks.length === 0) {
+                    showWarning('No links to copy');
+                    return;
+                }
+                
+                const text = extractedLinks.join('\n');
+                navigator.clipboard.writeText(text)
+                    .then(() => {
+                        showSuccess('All links copied to clipboard');
+                    })
+                    .catch(err => {
+                        showError('Failed to copy links: ' + err.message);
+                    });
+            });
+
+            // Clear results
+            clearResultsBtn.addEventListener('click', () => {
+                extractedLinks = [];
+                renderLinks();
+                updateStats();
+                showSuccess('Results cleared');
+            });
+
+            // Apply filters
+            applyFiltersBtn.addEventListener('click', () => {
+                if (extractedLinks.length === 0) {
+                    showWarning('No links to filter');
+                    return;
+                }
+                
+                filterLinks();
+                sortLinks();
+                renderLinks();
+                updateStats();
+                showSuccess('Filters applied');
+            });
+
+            // Sort change
+            sortBySelect.addEventListener('change', () => {
+                if (extractedLinks.length > 0) {
+                    sortLinks();
+                    renderLinks();
+                }
+            });
+
+            // Context menu
+            document.addEventListener('click', () => {
+                contextMenu.style.display = 'none';
+            });
+
+            // Functions
+            function addFilterItem(container, className) {
+                const filterItem = document.createElement('div');
+                filterItem.className = 'filter-item';
+                
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = className;
+                input.placeholder = className === 'domain-filter' ? 'e.g. example.com' : 'e.g. admin';
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.textContent = '×';
+                removeBtn.addEventListener('click', () => {
+                    container.removeChild(filterItem);
+                });
+                
+                filterItem.appendChild(input);
+                filterItem.appendChild(removeBtn);
+                container.appendChild(filterItem);
+            }
+
+            async function extractLinksFromUrl(url) {
+                if (!url.match(/^https?:\/\//i)) {
+                    url = 'https://' + url;
+                }
+                
+                try {
+                    showProgressBar(true, 0);
+                    const response = await fetch(url, {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                        },
+                        mode: 'cors'
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    
+                    showProgressBar(true, 50);
+                    const html = await response.text();
+                    showProgressBar(true, 75);
+                    const links = extractLinksFromHtml(html, url);
+                    showProgressBar(true, 100);
+                    
+                    return links;
+                } catch (error) {
+                    showWarning(`Could not fetch URL directly due to browser security restrictions. Trying to extract from URL string itself.`);
+                    console.error('Error fetching URL:', error);
+                    
+                    // Just extract the URL itself as a fallback
+                    return [url];
+                } finally {
+                    showProgressBar(false);
+                }
+            }
+
+            function extractLinksFromText(text) {
+                const links = [];
+                
+                // URL regex pattern
+                const urlPattern = /(?:(?:https?|ftp):\/\/)?(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*)/gi;
+                
+                // Find all URLs in text
+                let match;
+                while (match = urlPattern.exec(text)) {
+                    links.push(match[0]);
+                }
+                
+                return links;
+            }
+
+            function extractLinksFromHtml(html, baseUrl) {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const links = [];
+                
+                // Extract href attributes from a tags
+                const aTags = doc.querySelectorAll('a');
+                aTags.forEach(a => {
+                    const href = a.getAttribute('href');
+                    if (href && !href.startsWith('javascript:') && !href.startsWith('#') && href !== '/') {
+                        links.push(resolveUrl(href, baseUrl));
+                    }
+                });
+                
+                // Extract URLs from other tags with src
+                const srcTags = doc.querySelectorAll('[src]');
+                srcTags.forEach(tag => {
+                    const src = tag.getAttribute('src');
+                    if (src) {
+                        links.push(resolveUrl(src, baseUrl));
+                    }
+                });
+                
+                // Extract urls from text content
+                const textLinks = extractLinksFromText(html);
+                links.push(...textLinks);
+                
+                return links;
+            }
+
+            async function extractLinksFromFile(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(event) {
+                        try {
+                            const content = event.target.result;
+                            let links = [];
+                            
+                            // Determine file type by extension
+                            const fileName = file.name.toLowerCase();
+                            
+                            if (fileName.endsWith('.html') || fileName.endsWith('.htm')) {
+                                links = extractLinksFromHtml(content, window.location.href);
+                            } else if (fileName.endsWith('.json')) {
+                                try {
+                                    const jsonData = JSON.parse(content);
+                                    links = extractLinksFromJson(jsonData);
+                                } catch (e) {
+                                    console.error('Error parsing JSON:', e);
+                                    links = extractLinksFromText(content);
+                                }
+                            } else if (fileName.endsWith('.xml')) {
+                                const parser = new DOMParser();
+                                const xmlDoc = parser.parseFromString(content, 'text/xml');
+                                links = extractLinksFromXml(xmlDoc);
+                            } else {
+                                // Text or other formats - just extract URLs from text
+                                links = extractLinksFromText(content);
+                            }
+                            
+                            resolve(links);
+                        } catch (error) {
+                            reject(error);
+                        }
+                    };
+                    
+                    reader.onerror = function() {
+                        reject(new Error('Error reading file'));
+                    };
+                    
+                    reader.readAsText(file);
+                });
+            }
+
+            function extractLinksFromJson(jsonData) {
+                const links = [];
+                const processValue = (value) => {
+                    if (typeof value === 'string') {
+                        const urlMatches = extractLinksFromText(value);
+                        links.push(...urlMatches);
+                    } else if (Array.isArray(value)) {
+                        value.forEach(item => processValue(item));
+                    } else if (typeof value === 'object' && value !== null) {
+                        Object.values(value).forEach(v => processValue(v));
+                    }
+                };
+                
+                processValue(jsonData);
+                return links;
+            }
+
+            function extractLinksFromXml(xmlDoc) {
+                const links = [];
+                
+                // Function to recursively extract text content
+                const extractTextContent = (element) => {
+                    if (element.children.length === 0) {
+                        const textLinks = extractLinksFromText(element.textContent);
+                        links.push(...textLinks);
+                    } else {
+                        Array.from(element.children).forEach(child => {
+                            extractTextContent(child);
+                        });
+                    }
+                    
+                    // Check attributes for URLs
+                    Array.from(element.attributes).forEach(attr => {
+                        const attrLinks = extractLinksFromText(attr.value);
+                        links.push(...attrLinks);
+                    });
+                };
+                
+                extractTextContent(xmlDoc.documentElement);
+                return links;
+            }
+
+            function resolveUrl(url, baseUrl) {
+                try {
+                    return new URL(url, baseUrl).href;
+                } catch (e) {
+                    return url;
+                }
+            }
+
+            function processExtractedLinks(links) {
+                if (normalizeUrlsCheckbox.checked) {
+                    links = links.map(normalizeUrl);
+                }
+                
+                if (removeDuplicatesCheckbox.checked) {
+                    links = [...new Set(links)];
+                }
+                
+                // Merge with existing links
+                extractedLinks = [...new Set([...extractedLinks, ...links])];
+                
+                filterLinks();
+                sortLinks();
+                renderLinks();
+                updateStats();
+            }
+
+            function normalizeUrl(url) {
+                // Add protocol if missing
+                if (url && !url.match(/^https?:\/\//i) && !url.match(/^ftp:\/\//i) && !url.match(/^mailto:/i)) {
+                    if (url.includes('/') || url.includes('.')) {
+                        return 'https://' + url;
+                    }
+                }
+                return url;
+            }
+
+            function filterLinks() {
+                // Get domain filters
+                const domains = Array.from(document.querySelectorAll('.domain-filter'))
+                    .map(input => input.value.trim())
+                    .filter(value => value.length > 0);
+                
+                // Get keyword filters
+                const keywords = Array.from(document.querySelectorAll('.keyword-filter'))
+                    .map(input => input.value.trim())
+                    .filter(value => value.length > 0);
+                
+                if (domains.length > 0 || keywords.length > 0) {
+                    extractedLinks = extractedLinks.filter(link => {
+                        try {
+                            // Check against domain filters
+                            if (domains.length > 0) {
+                                const url = new URL(normalizeUrl(link));
+                                const domain = url.hostname;
+                                
+                                if (domains.some(d => domain.includes(d))) {
+                                    return false;
+                                }
+                            }
+                            
+                            // Check against keyword filters
+                            if (keywords.length > 0) {
+                                if (keywords.some(keyword => link.toLowerCase().includes(keyword.toLowerCase()))) {
+                                    return false;
+                                }
+                            }
+                            
+                            return true;
+                        } catch (e) {
+                            // If URL parsing fails, just do a simple string check
+                            return !domains.some(d => link.includes(d)) && 
+                                   !keywords.some(k => link.toLowerCase().includes(k.toLowerCase()));
+                        }
+                    });
+                }
+            }
+
+            function sortLinks() {
+                const sortOption = sortBySelect.value;
+                
+                switch(sortOption) {
+                    case 'alphabetical':
+                        extractedLinks.sort();
+                        break;
+                    case 'alphabetical-reverse':
+                        extractedLinks.sort().reverse();
+                        break;
+                    case 'length':
+                        extractedLinks.sort((a, b) => a.length - b.length);
+                        break;
+                    case 'length-reverse':
+                        extractedLinks.sort((a, b) => b.length - a.length);
+                        break;
+                    case 'domain':
+                        extractedLinks.sort((a, b) => {
+                            try {
+                                const domainA = new URL(normalizeUrl(a)).hostname;
+                                const domainB = new URL(normalizeUrl(b)).hostname;
+                                return domainA.localeCompare(domainB);
+                            } catch (e) {
+                                return a.localeCompare(b);
+                            }
+                        });
+                        break;
+                    // No sorting for 'none'
+                }
+            }
+
+            async function verifyLink(link) {
+                try {
+                    const response = await fetch(link, {
+                        method: 'HEAD',
+                        mode: 'no-cors'
+                    });
+                    return true;
+                } catch (error) {
+                    return false;
+                }
+            }
+
+            function renderLinks() {
+                linksList.innerHTML = '';
+                linksCount.textContent = extractedLinks.length;
+                
+                if (extractedLinks.length === 0) {
+                    const li = document.createElement('li');
+                    li.className = 'link-item';
+                    li.textContent = 'No links found';
+                    linksList.appendChild(li);
+                    return;
+                }
+                
+                extractedLinks.forEach((link, index) => {
+                    const li = document.createElement('li');
+                    li.className = 'link-item';
+                    li.dataset.link = link;
+                    li.dataset.index = index;
+                    
+                    const a = document.createElement('a');
+                    a.href = link;
+                    a.textContent = link;
+                    a.setAttribute('target', '_blank');
+                    a.setAttribute('rel', 'noopener noreferrer');
+                    
+                    const actionContainer = document.createElement('div');
+                    actionContainer.className = 'link-actions';
+                    
+                    const copyBtn = document.createElement('button');
+                    copyBtn.innerHTML = '📋';
+                    copyBtn.title = 'Copy link';
+                    copyBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(link)
+                            .then(() => showSuccess('Link copied to clipboard', 1000))
+                            .catch(err => showError('Failed to copy: ' + err));
+                    });
+                    
+                    const removeBtn = document.createElement('button');
+                    removeBtn.innerHTML = '✕';
+                    removeBtn.title = 'Remove link';
+                    removeBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        extractedLinks.splice(index, 1);
+                        renderLinks();
+                        updateStats();
+                    });
+                    
+                    actionContainer.appendChild(copyBtn);
+                    actionContainer.appendChild(removeBtn);
+                    
+                    li.appendChild(a);
+                    li.appendChild(actionContainer);
+                    
+                    // Context menu for links
+                    li.addEventListener('contextmenu', function(e) {
+                        e.preventDefault();
+                        
+                        const rect = li.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
+                        
+                        showContextMenu(x, y, index);
+                    });
+                    
+                    linksList.appendChild(li);
+                });
+            }
+
+            function showContextMenu(x, y, linkIndex) {
+                contextMenu.style.display = 'block';
+                contextMenu.style.left = `${x}px`;
+                contextMenu.style.top = `${y}px`;
+                
+                // Clear previous event listeners
+                const options = contextMenu.querySelectorAll('.context-menu-option');
+                options.forEach(option => {
+                    const newOption = option.cloneNode(true);
+                    option.parentNode.replaceChild(newOption, option);
+                });
+                
+                // Add new event listeners
+                contextMenu.querySelector('[data-action="open"]').addEventListener('click', () => {
+                    window.open(extractedLinks[linkIndex], '_blank');
+                    contextMenu.style.display = 'none';
+                });
+                
+                contextMenu.querySelector('[data-action="copy"]').addEventListener('click', () => {
+                    navigator.clipboard.writeText(extractedLinks[linkIndex])
+                        .then(() => showSuccess('Link copied to clipboard', 1000))
+                        .catch(err => showError('Failed to copy: ' + err));
+                    contextMenu.style.display = 'none';
+                });
+                
+                contextMenu.querySelector('[data-action="remove"]').addEventListener('click', () => {
+                    extractedLinks.splice(linkIndex, 1);
+                    renderLinks();
+                    updateStats();
+                    contextMenu.style.display = 'none';
+                });
+            }
+
+            function updateStats() {
+                if (extractedLinks.length === 0) {
+                    statsContainer.textContent = 'No links extracted yet.';
+                    return;
+                }
+                
+                // Count unique domains
+                const domains = new Set();
+                
+                extractedLinks.forEach(link => {
+                    try {
+                        const url = new URL(normalizeUrl(link));
+                        domains.add(url.hostname);
+                    } catch (e) {
+                        // Ignore invalid URLs
+                    }
+                });
+                
+                statsContainer.innerHTML = `
+                    <strong>Total links:</strong> ${extractedLinks.length}<br>
+                    <strong>Unique domains:</strong> ${domains.size}
+                `;
+            }
+
+            function showProgressBar(show, progress = 0) {
+                if (show) {
+                    progressContainer.style.display = 'block';
+                    progressBar.style.width = `${progress}%`;
+                } else {
+                    progressContainer.style.display = 'none';
+                }
+            }
+
+            function showLoading(show) {
+                if (show) {
+                    extractBtn.disabled = true;
+                    loadingSpinner.style.display = 'inline-block';
+                } else {
+                    extractBtn.disabled = false;
+                    loadingSpinner.style.display = 'none';
+                }
+            }
+
+            function showError(message, duration = 5000) {
+                errorAlert.textContent = message;
+                errorAlert.style.display = 'block';
+                
+                if (duration) {
+                    setTimeout(() => {
+                        errorAlert.style.display = 'none';
+                    }, duration);
+                }
+            }
+
+            function showSuccess(message, duration = 3000) {
+                successAlert.textContent = message;
+                successAlert.style.display = 'block';
+                
+                if (duration) {
+                    setTimeout(() => {
+                        successAlert.style.display = 'none';
+                    }, duration);
+                }
+            }
+
+            function showWarning(message, duration = 5000) {
+                warningAlert.textContent = message;
+                warningAlert.style.display = 'block';
+                
+                if (duration) {
+                    setTimeout(() => {
+                        warningAlert.style.display = 'none';
+                    }, duration);
+                }
+            }
+
+            function clearAlerts() {
+                errorAlert.style.display = 'none';
+                successAlert.style.display = 'none';
+                warningAlert.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
