@@ -18,6 +18,14 @@
             --warning: #f39c12;
         }
 
+        .dark-mode {
+            --bg-primary: #121212;
+            --bg-secondary: #1e1e1e;
+            --bg-tertiary: #2a2a2a;
+            --text-primary: #e0e0e0;
+            --text-secondary: #aaaaaa;
+        }
+
         @media (prefers-color-scheme: dark) {
             :root {
                 --bg-primary: #121212;
@@ -549,6 +557,88 @@
                 transform-origin: top right;
             }
         }
+
+        /* Proxy status indicators */
+        .proxy-status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .proxy-working {
+            background-color: var(--success);
+        }
+
+        .proxy-issue {
+            background-color: var(--warning);
+        }
+
+        .proxy-failing {
+            background-color: var(--danger);
+        }
+
+        .proxy-unknown {
+            background-color: var(--text-secondary);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: var(--bg-secondary);
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 600px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+        }
+
+        .close-modal {
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .proxy-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .proxy-list li {
+            padding: 8px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            background-color: var(--bg-tertiary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .proxy-test-btn {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
@@ -583,20 +673,25 @@
                 <input type="url" id="url-input" placeholder="https://example.com" autocomplete="off">
                 
                 <div class="cors-options">
-                    <label for="cors-proxy">CORS Proxy (helps bypass browser security restrictions):</label>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <label for="cors-proxy">Fetch Method:</label>
+                        <button id="proxy-info-btn" class="proxy-test-btn">Test Proxies</button>
+                    </div>
                     <select id="cors-proxy">
-                        <option value="none">No proxy (direct request)</option>
-                        <option value="corsanywhere" selected>CORS Anywhere (cors-anywhere.herokuapp.com)</option>
-                        <option value="allorigins">All Origins (allorigins.win)</option>
+                        <option value="direct">Direct Request (Limited by CORS)</option>
+                        <option value="allorigins" selected>All Origins (allorigins.win)</option>
                         <option value="corsproxy">CORS Proxy (corsproxy.io)</option>
-                        <option value="thingproxy">ThingProxy (thingproxy.freeboard.io)</option>
+                        <option value="jsonp">JSONP Request (htmldriven.com)</option>
+                        <option value="corsanywhere">CORS Anywhere (herokuapp.com)</option>
+                        <option value="corsio">CORS.io Service</option>
                         <option value="custom">Custom Proxy URL</option>
                     </select>
                     <div id="custom-proxy-container" style="display: none;">
                         <input type="text" id="custom-proxy-url" placeholder="Enter custom proxy URL (e.g., https://your-proxy.com/?url=)">
                     </div>
                     <div class="helper-text">
-                        Using a CORS proxy may help access restricted websites, but some proxies may have usage limits or be occasionally unavailable.
+                        <strong>CORS restrictions</strong> prevent browsers from directly accessing many websites. Use a proxy to bypass these limitations.
+                        <br>Note: Public proxies may have usage limits or be occasionally unavailable.
                     </div>
                 </div>
             </div>
@@ -720,7 +815,7 @@
 
     <div class="github-notice">
         <p>Advanced Link Extractor is open source and freely available on <a href="https://github.com/yourusername/link-extractor" class="github-link" target="_blank" rel="noopener noreferrer">GitHub</a>.</p>
-        <p>This tool runs entirely in your browser - no data is sent to any server.</p>
+        <p>This tool runs entirely in your browser - no data is sent to any server except through the proxies you select.</p>
     </div>
 
     <!-- Context menu -->
@@ -728,6 +823,25 @@
         <div class="context-menu-option" data-action="open">Open Link</div>
         <div class="context-menu-option" data-action="copy">Copy Link</div>
         <div class="context-menu-option" data-action="remove">Remove Link</div>
+    </div>
+
+    <!-- Proxy Test Modal -->
+    <div id="proxy-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>CORS Proxy Status</h3>
+                <span class="close-modal" id="close-proxy-modal">&times;</span>
+            </div>
+            <p>Testing the availability of different CORS proxies:</p>
+            <ul class="proxy-list" id="proxy-test-results">
+                <!-- Proxy test results will be added here -->
+            </ul>
+            <p class="helper-text">
+                Note: Proxy availability can change frequently. If a proxy isn't working, try another one.
+                <br>The test results are based on a request to example.com.
+            </p>
+            <button id="refresh-proxy-tests">Refresh Test Results</button>
+        </div>
     </div>
 
     <script>
@@ -766,10 +880,16 @@
             const corsProxySelect = document.getElementById('cors-proxy');
             const customProxyContainer = document.getElementById('custom-proxy-container');
             const customProxyUrl = document.getElementById('custom-proxy-url');
+            const proxyInfoBtn = document.getElementById('proxy-info-btn');
+            const proxyModal = document.getElementById('proxy-modal');
+            const closeProxyModal = document.getElementById('close-proxy-modal');
+            const proxyTestResults = document.getElementById('proxy-test-results');
+            const refreshProxyTests = document.getElementById('refresh-proxy-tests');
 
             // State variables
             let extractedLinks = [];
             let currentActiveTab = 'url-tab';
+            let proxyStatus = {}; // To store proxy test results
 
             // Initialize dark mode based on system preference
             function initDarkMode() {
@@ -808,6 +928,26 @@
                 } else {
                     customProxyContainer.style.display = 'none';
                 }
+            });
+
+            // Proxy modal
+            proxyInfoBtn.addEventListener('click', function() {
+                proxyModal.style.display = 'block';
+                testAllProxies();
+            });
+
+            closeProxyModal.addEventListener('click', function() {
+                proxyModal.style.display = 'none';
+            });
+
+            window.addEventListener('click', function(event) {
+                if (event.target === proxyModal) {
+                    proxyModal.style.display = 'none';
+                }
+            });
+
+            refreshProxyTests.addEventListener('click', function() {
+                testAllProxies();
             });
 
             // Tab switching
@@ -990,76 +1130,150 @@
                 try {
                     showProgressBar(true, 0);
                     
-                    // Get selected CORS proxy
+                    // Get selected fetch method
                     const proxyType = corsProxySelect.value;
-                    let proxyUrl = '';
+                    let html = '';
                     
+                    // Try to fetch the URL using the selected method
                     switch(proxyType) {
-                        case 'none':
-                            proxyUrl = '';
+                        case 'direct':
+                            try {
+                                const response = await fetch(url, {
+                                    headers: {
+                                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                                    },
+                                    mode: 'cors'
+                                });
+                                
+                                if (!response.ok) {
+                                    throw new Error(`HTTP error! Status: ${response.status}`);
+                                }
+                                
+                                html = await response.text();
+                            } catch (error) {
+                                throw new Error(`Direct request failed due to CORS restrictions: ${error.message}`);
+                            }
                             break;
-                        case 'corsanywhere':
-                            proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-                            break;
+                            
                         case 'allorigins':
                             // Using fetch mode with allorigins
                             const allOriginsUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-                            const response = await fetch(allOriginsUrl);
+                            const alResponse = await fetch(allOriginsUrl);
                             
-                            if (!response.ok) {
-                                throw new Error(`HTTP error! Status: ${response.status}`);
+                            if (!alResponse.ok) {
+                                throw new Error(`AllOrigins proxy error! Status: ${alResponse.status}`);
                             }
                             
-                            showProgressBar(true, 50);
-                            const html = await response.text();
-                            showProgressBar(true, 75);
-                            const links = extractLinksFromHtml(html, url);
-                            showProgressBar(true, 100);
+                            html = await alResponse.text();
+                            break;
                             
-                            return links;
                         case 'corsproxy':
-                            proxyUrl = 'https://corsproxy.io/?';
+                            const corsproxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+                            const cpResponse = await fetch(corsproxyUrl);
+                            
+                            if (!cpResponse.ok) {
+                                throw new Error(`CORS Proxy error! Status: ${cpResponse.status}`);
+                            }
+                            
+                            html = await cpResponse.text();
                             break;
-                        case 'thingproxy':
-                            proxyUrl = 'https://thingproxy.freeboard.io/fetch/';
+
+                        case 'jsonp':
+                            // Using a JSONP-like service that returns HTML content
+                            // This requires creating a script tag and handling the callback
+                            // We'll use htmldriven.com API
+                            html = await new Promise((resolve, reject) => {
+                                const script = document.createElement('script');
+                                const callbackName = 'jsonpCallback' + Math.round(Math.random() * 1000000);
+                                window[callbackName] = function(data) {
+                                    delete window[callbackName];
+                                    document.body.removeChild(script);
+                                    resolve(data.html || '');
+                                };
+                                
+                                script.src = `https://api.htmldriven.com/api/v1/url/get?url=${encodeURIComponent(url)}&callback=${callbackName}`;
+                                script.onerror = () => {
+                                    delete window[callbackName];
+                                    document.body.removeChild(script);
+                                    reject(new Error('JSONP request failed'));
+                                };
+                                
+                                document.body.appendChild(script);
+                                
+                                // Set a timeout in case the callback never fires
+                                setTimeout(() => {
+                                    if (window[callbackName]) {
+                                        delete window[callbackName];
+                                        document.body.removeChild(script);
+                                        reject(new Error('JSONP request timed out'));
+                                    }
+                                }, 10000);
+                            });
                             break;
+
+                        case 'corsanywhere':
+                            const corsAnywhereUrl = `https://cors-anywhere.herokuapp.com/${url}`;
+                            try {
+                                const caResponse = await fetch(corsAnywhereUrl);
+                                
+                                if (!caResponse.ok) {
+                                    throw new Error(`CORS Anywhere error! Status: ${caResponse.status}`);
+                                }
+                                
+                                html = await caResponse.text();
+                            } catch (error) {
+                                throw new Error(`CORS Anywhere proxy failed: ${error.message}`);
+                            }
+                            break;
+
+                        case 'corsio':
+                            const corsIoUrl = `https://cors.io/?${url}`;
+                            try {
+                                const cioResponse = await fetch(corsIoUrl);
+                                
+                                if (!cioResponse.ok) {
+                                    throw new Error(`CORS.io error! Status: ${cioResponse.status}`);
+                                }
+                                
+                                html = await cioResponse.text();
+                            } catch (error) {
+                                throw new Error(`CORS.io proxy failed: ${error.message}`);
+                            }
+                            break;
+
                         case 'custom':
-                            proxyUrl = customProxyUrl.value || '';
+                            if (!customProxyUrl.value) {
+                                throw new Error('Custom proxy URL is empty');
+                            }
+                            
+                            const customUrl = customProxyUrl.value.includes('$URL') 
+                                ? customProxyUrl.value.replace('$URL', encodeURIComponent(url))
+                                : customProxyUrl.value + encodeURIComponent(url);
+                                
+                            const customResponse = await fetch(customUrl);
+                            
+                            if (!customResponse.ok) {
+                                throw new Error(`Custom proxy error! Status: ${customResponse.status}`);
+                            }
+                            
+                            html = await customResponse.text();
                             break;
+                            
+                        default:
+                            throw new Error('Invalid proxy selection');
                     }
                     
-                    // Handle non-allorigins proxies
-                    if (proxyType !== 'allorigins') {
-                        const response = await fetch(proxyUrl + url, {
-                            headers: {
-                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-                            }
-                        });
-                        
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! Status: ${response.status}`);
-                        }
-                        
-                        showProgressBar(true, 50);
-                        const html = await response.text();
-                        showProgressBar(true, 75);
-                        const links = extractLinksFromHtml(html, url);
-                        showProgressBar(true, 100);
-                        
-                        return links;
-                    }
+                    showProgressBar(true, 75);
+                    const links = extractLinksFromHtml(html, url);
+                    showProgressBar(true, 100);
+                    
+                    return links;
                 } catch (error) {
-                    // If CORS proxy fails, try to extract directly from the URL
                     console.error('Error fetching URL:', error);
                     
-                    // Try alternative methods:
-                    // 1. Try using a raw HTTP request through a service worker (if available)
-                    // 2. Use link-preview APIs if available
-                    // 3. As a last resort, just extract the URL itself
+                    // Fallback: Parse the URL itself and try to extract meaningful parts
+                    showWarning(`${error.message} Extracting from URL structure itself.`);
                     
-                    showWarning(`Could not fetch URL: ${error.message}. Extracting from URL string itself.`);
-                    
-                    // Try to at least extract domain/path parts from the URL itself
                     try {
                         const parsedUrl = new URL(url);
                         const possibleLinks = [];
@@ -1084,6 +1298,154 @@
                     }
                 } finally {
                     showProgressBar(false);
+                }
+            }
+
+            // Test all available proxies and update the modal
+            async function testAllProxies() {
+                const testUrl = 'https://example.com';
+                proxyTestResults.innerHTML = '';
+                
+                // Define all proxies to test
+                const proxies = [
+                    { id: 'direct', name: 'Direct Request', value: 'direct' },
+                    { id: 'allorigins', name: 'All Origins', value: 'allorigins' },
+                    { id: 'corsproxy', name: 'CORS Proxy', value: 'corsproxy' },
+                    { id: 'jsonp', name: 'JSONP (HTMLDriven)', value: 'jsonp' },
+                    { id: 'corsanywhere', name: 'CORS Anywhere', value: 'corsanywhere' },
+                    { id: 'corsio', name: 'CORS.io', value: 'corsio' }
+                ];
+                
+                // Create list items for each proxy
+                proxies.forEach(proxy => {
+                    const li = document.createElement('li');
+                    li.id = `proxy-test-${proxy.id}`;
+                    li.innerHTML = `
+                        <span>
+                            <span class="proxy-status proxy-unknown"></span>
+                            ${proxy.name}
+                        </span>
+                        <span>Testing...</span>
+                    `;
+                    proxyTestResults.appendChild(li);
+                });
+                
+                // Test each proxy
+                for (const proxy of proxies) {
+                    const proxyItem = document.getElementById(`proxy-test-${proxy.id}`);
+                    const statusIndicator = proxyItem.querySelector('.proxy-status');
+                    
+                    try {
+                        // Show testing status
+                        proxyItem.querySelector('span:last-child').textContent = 'Testing...';
+                        statusIndicator.className = 'proxy-status proxy-unknown';
+                        
+                        let success = false;
+                        let errorMsg = '';
+                        
+                        switch(proxy.value) {
+                            case 'direct':
+                                try {
+                                    const response = await fetch(testUrl, { mode: 'cors' });
+                                    success = response.ok;
+                                } catch (e) {
+                                    errorMsg = 'CORS blocked';
+                                }
+                                break;
+                                
+                            case 'allorigins':
+                                try {
+                                    const response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(testUrl)}`);
+                                    success = response.ok;
+                                } catch (e) {
+                                    errorMsg = e.message;
+                                }
+                                break;
+                                
+                            case 'corsproxy':
+                                try {
+                                    const response = await fetch(`https://corsproxy.io/?${encodeURIComponent(testUrl)}`);
+                                    success = response.ok;
+                                } catch (e) {
+                                    errorMsg = e.message;
+                                }
+                                break;
+                                
+                            case 'jsonp':
+                                try {
+                                    success = await new Promise((resolve) => {
+                                        const script = document.createElement('script');
+                                        const callbackName = 'jsonpCallback' + Math.round(Math.random() * 1000000);
+                                        
+                                        window[callbackName] = function(data) {
+                                            delete window[callbackName];
+                                            document.body.removeChild(script);
+                                            resolve(!!data.html);
+                                        };
+                                        
+                                        script.src = `https://api.htmldriven.com/api/v1/url/get?url=${encodeURIComponent(testUrl)}&callback=${callbackName}`;
+                                        script.onerror = () => {
+                                            delete window[callbackName];
+                                            document.body.removeChild(script);
+                                            resolve(false);
+                                        };
+                                        
+                                        document.body.appendChild(script);
+                                        
+                                        setTimeout(() => {
+                                            if (window[callbackName]) {
+                                                delete window[callbackName];
+                                                document.body.removeChild(script);
+                                                resolve(false);
+                                            }
+                                        }, 5000);
+                                    });
+                                } catch (e) {
+                                    errorMsg = e.message;
+                                }
+                                break;
+                                
+                            case 'corsanywhere':
+                                try {
+                                    const response = await fetch(`https://cors-anywhere.herokuapp.com/${testUrl}`);
+                                    success = response.ok;
+                                } catch (e) {
+                                    errorMsg = e.message;
+                                }
+                                break;
+                                
+                            case 'corsio':
+                                try {
+                                    const response = await fetch(`https://cors.io/?${testUrl}`);
+                                    success = response.ok;
+                                } catch (e) {
+                                    errorMsg = e.message;
+                                }
+                                break;
+                        }
+                        
+                        // Update status
+                        if (success) {
+                            statusIndicator.className = 'proxy-status proxy-working';
+                            proxyItem.querySelector('span:last-child').textContent = 'Working';
+                            proxyStatus[proxy.value] = 'working';
+                        } else {
+                            statusIndicator.className = 'proxy-status proxy-failing';
+                            proxyItem.querySelector('span:last-child').textContent = errorMsg || 'Not working';
+                            proxyStatus[proxy.value] = 'failing';
+                        }
+                    } catch (error) {
+                        statusIndicator.className = 'proxy-status proxy-failing';
+                        proxyItem.querySelector('span:last-child').textContent = 'Error: ' + error.message;
+                        proxyStatus[proxy.value] = 'failing';
+                    }
+                }
+                
+                // Update the proxy select dropdown to show the working proxies first
+                const workingProxies = proxies.filter(proxy => proxyStatus[proxy.value] === 'working');
+                
+                if (workingProxies.length > 0 && corsProxySelect.value !== 'custom') {
+                    corsProxySelect.value = workingProxies[0].value;
                 }
             }
 
@@ -1443,39 +1805,49 @@
                     // If direct fetch fails, try through CORS proxy if one is selected
                     try {
                         const proxyType = corsProxySelect.value;
-                        if (proxyType !== 'none') {
-                            let proxyUrl = '';
-                            
+                        if (proxyType !== 'direct') {
+                            // Use the same proxy mechanism as extractLinksFromUrl
+                            // We'll just check if we can get a successful response
                             switch(proxyType) {
-                                case 'corsanywhere':
-                                    proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-                                    break;
                                 case 'allorigins':
-                                    // Using a different approach for allorigins
                                     const allOriginsUrl = `https://api.allorigins.win/head?url=${encodeURIComponent(link)}`;
                                     const response = await fetch(allOriginsUrl);
                                     const data = await response.json();
                                     return data.status && data.status.http_code < 400;
+                                    
                                 case 'corsproxy':
-                                    proxyUrl = 'https://corsproxy.io/?';
-                                    break;
-                                case 'thingproxy':
-                                    proxyUrl = 'https://thingproxy.freeboard.io/fetch/';
-                                    break;
+                                    const corsproxyUrl = `https://corsproxy.io/?${encodeURIComponent(link)}`;
+                                    const cpResponse = await fetch(corsproxyUrl, { method: 'HEAD' });
+                                    return cpResponse.ok;
+                                    
+                                case 'jsonp':
+                                    // JSONP doesn't support HEAD requests, we'd have to do a full GET
+                                    return true; // Just assume it's valid
+                                    
+                                case 'corsanywhere':
+                                    const corsAnywhereUrl = `https://cors-anywhere.herokuapp.com/${link}`;
+                                    const caResponse = await fetch(corsAnywhereUrl, { method: 'HEAD' });
+                                    return caResponse.ok;
+                                    
+                                case 'corsio':
+                                    const corsIoUrl = `https://cors.io/?${link}`;
+                                    const cioResponse = await fetch(corsIoUrl, { method: 'HEAD' });
+                                    return cioResponse.ok;
+                                    
                                 case 'custom':
-                                    proxyUrl = customProxyUrl.value || '';
-                                    break;
-                            }
-                            
-                            if (proxyType !== 'allorigins' && proxyUrl) {
-                                const response = await fetch(proxyUrl + link, {
-                                    method: 'HEAD'
-                                });
-                                return response.ok;
+                                    if (!customProxyUrl.value) return false;
+                                    
+                                    const customUrl = customProxyUrl.value.includes('$URL') 
+                                        ? customProxyUrl.value.replace('$URL', encodeURIComponent(link))
+                                        : customProxyUrl.value + encodeURIComponent(link);
+                                        
+                                    const customResponse = await fetch(customUrl, { method: 'HEAD' });
+                                    return customResponse.ok;
                             }
                         }
                     } catch (proxyError) {
                         // If proxy verification fails, consider it not verified
+                        console.error('Proxy verification failed:', proxyError);
                         return false;
                     }
                     
