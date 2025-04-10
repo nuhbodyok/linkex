@@ -871,16 +871,48 @@
             function extractLinksFromText(text) {
                 const links = [];
                 
-                // URL regex pattern
-                const urlPattern = /(?:(?:https?|ftp):\/\/)?(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*)/gi;
+                // Improved URL regex pattern
+                // This is a more robust pattern to find actual URLs and not just any text containing periods
+                const urlPattern = /(?:https?:\/\/)?(?:www\.)?(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9](?::\d{1,5})?(?:\/(?:[^\s()<>]+|\((?:[^\s()<>]+|(?:\([^\s()<>]+\)))*\))+(?:\((?:[^\s()<>]+|(?:\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»""'']))?/gi;
                 
-                // Find all URLs in text
+                // Also look for URLs with explicit protocols
+                const protocolUrlPattern = /(?:https?|ftp):\/\/(?:(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]|localhost|(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))(?::\d{1,5})?(?:\/[^\s]*)?/gi;
+                
+                // Find all URLs in text using both patterns
                 let match;
+                const foundUrls = new Set();
+                
                 while (match = urlPattern.exec(text)) {
-                    links.push(match[0]);
+                    if (isLikelyUrl(match[0])) {
+                        foundUrls.add(match[0]);
+                    }
                 }
                 
-                return links;
+                while (match = protocolUrlPattern.exec(text)) {
+                    foundUrls.add(match[0]);
+                }
+                
+                return Array.from(foundUrls);
+            }
+            
+            // Helper function to filter out false positives
+            function isLikelyUrl(str) {
+                // Check if the string contains a valid TLD
+                const knownTLDs = /\.(com|net|org|edu|gov|mil|io|co|us|uk|ca|au|de|jp|fr|ru|br|in|it|nl|es|ch|se|no|mx|nz|cn|kr|eu|info|biz|xyz|dev|app|tech|online|blog|site|space|store|me|tv|cc|academy|agency|ai|art|band|bar|best|business|city|club|coffee|digital|email|enterprises|events|expert|fund|gallery|games|graphics|guide|guru|haus|health|host|house|industries|life|limited|live|llc|media|news|ninja|one|page|partners|party|photo|pictures|pro|productions|services|social|software|solutions|store|studio|style|support|technology|tools|university|ventures|vision|wiki|world|zone)$/i;
+                
+                // Additional validations to exclude common false positives
+                // Exclude email addresses
+                if (/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(str)) {
+                    return false;
+                }
+                
+                // Exclude file paths or simple domain-like text
+                if (str.length < 8 && !str.includes('://')) {
+                    return false;
+                }
+                
+                // Check for a valid TLD or if it has a protocol
+                return knownTLDs.test(str) || /^(https?|ftp):\/\//.test(str);
             }
 
             function extractLinksFromHtml(html, baseUrl) {
@@ -893,7 +925,14 @@
                 aTags.forEach(a => {
                     const href = a.getAttribute('href');
                     if (href && !href.startsWith('javascript:') && !href.startsWith('#') && href !== '/') {
-                        links.push(resolveUrl(href, baseUrl));
+                        try {
+                            const fullUrl = resolveUrl(href, baseUrl);
+                            if (isLikelyUrl(fullUrl)) {
+                                links.push(fullUrl);
+                            }
+                        } catch (e) {
+                            // Skip invalid URLs
+                        }
                     }
                 });
                 
@@ -902,13 +941,24 @@
                 srcTags.forEach(tag => {
                     const src = tag.getAttribute('src');
                     if (src) {
-                        links.push(resolveUrl(src, baseUrl));
+                        try {
+                            const fullUrl = resolveUrl(src, baseUrl);
+                            if (isLikelyUrl(fullUrl)) {
+                                links.push(fullUrl);
+                            }
+                        } catch (e) {
+                            // Skip invalid URLs
+                        }
                     }
                 });
                 
-                // Extract urls from text content
+                // Extract urls from text content using more robust detection
                 const textLinks = extractLinksFromText(html);
-                links.push(...textLinks);
+                textLinks.forEach(link => {
+                    if (isLikelyUrl(link)) {
+                        links.push(link);
+                    }
+                });
                 
                 return links;
             }
@@ -963,7 +1013,9 @@
                 const processValue = (value) => {
                     if (typeof value === 'string') {
                         const urlMatches = extractLinksFromText(value);
-                        links.push(...urlMatches);
+                        if (urlMatches.length > 0) {
+                            links.push(...urlMatches);
+                        }
                     } else if (Array.isArray(value)) {
                         value.forEach(item => processValue(item));
                     } else if (typeof value === 'object' && value !== null) {
@@ -982,7 +1034,13 @@
                 const extractTextContent = (element) => {
                     if (element.children.length === 0) {
                         const textLinks = extractLinksFromText(element.textContent);
-                        links.push(...textLinks);
+                        if (textLinks.length > 0) {
+                            textLinks.forEach(link => {
+                                if (isLikelyUrl(link)) {
+                                    links.push(link);
+                                }
+                            });
+                        }
                     } else {
                         Array.from(element.children).forEach(child => {
                             extractTextContent(child);
@@ -992,7 +1050,13 @@
                     // Check attributes for URLs
                     Array.from(element.attributes).forEach(attr => {
                         const attrLinks = extractLinksFromText(attr.value);
-                        links.push(...attrLinks);
+                        if (attrLinks.length > 0) {
+                            attrLinks.forEach(link => {
+                                if (isLikelyUrl(link)) {
+                                    links.push(link);
+                                }
+                            });
+                        }
                     });
                 };
                 
@@ -1002,13 +1066,27 @@
 
             function resolveUrl(url, baseUrl) {
                 try {
-                    return new URL(url, baseUrl).href;
+                    const resolved = new URL(url, baseUrl).href;
+                    // Exclude non-web protocols like data: or javascript:
+                    if (!/^(https?|ftp):\/\//i.test(resolved)) {
+                        // If the URL doesn't have a web protocol but is still a valid URL format, add https://
+                        if (isLikelyUrl(resolved)) {
+                            return 'https://' + resolved;
+                        }
+                        // Otherwise, return as is (might be filtered out later)
+                        return resolved;
+                    }
+                    return resolved;
                 } catch (e) {
+                    // If URL parsing fails, return the original URL
                     return url;
                 }
             }
 
             function processExtractedLinks(links) {
+                // Filter out non-URLs before normalization
+                links = links.filter(link => isLikelyUrl(link));
+                
                 if (normalizeUrlsCheckbox.checked) {
                     links = links.map(normalizeUrl);
                 }
@@ -1029,7 +1107,7 @@
             function normalizeUrl(url) {
                 // Add protocol if missing
                 if (url && !url.match(/^https?:\/\//i) && !url.match(/^ftp:\/\//i) && !url.match(/^mailto:/i)) {
-                    if (url.includes('/') || url.includes('.')) {
+                    if (url.includes('.') && !url.match(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/)) {
                         return 'https://' + url;
                     }
                 }
