@@ -177,8 +177,22 @@
             margin-bottom: 0.5rem;
         }
 
-        .filter-item input {
+        .filter-item span {
             flex-grow: 1;
+            padding: 0.5rem;
+            background-color: var(--bg-tertiary);
+            border-radius: 4px;
+            margin-right: 0.5rem;
+            border: 1px solid #333;
+        }
+
+        .filter-badge {
+            display: inline-block;
+            padding: 0.1rem 0.5rem;
+            font-size: 0.75rem;
+            background-color: var(--accent);
+            color: white;
+            border-radius: 10px;
             margin-right: 0.5rem;
         }
 
@@ -191,10 +205,35 @@
             background-color: #c0392b;
         }
 
-        .add-filter-btn {
-            margin-top: 0.5rem;
+        .filter-input-group {
+            display: flex;
+            margin-bottom: 1rem;
+            gap: 0.5rem;
+        }
+        
+        .filter-input-group input {
+            flex-grow: 1;
+            margin-bottom: 0;
+        }
+        
+        .filter-lists {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .filter-list {
+            flex: 1;
+            padding: 0.5rem;
             background-color: var(--bg-tertiary);
-            color: var(--text-primary);
+            border-radius: 4px;
+            border: 1px solid #333;
+        }
+        
+        .filter-list h3 {
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
         }
 
         .option-row {
@@ -282,6 +321,10 @@
         @media screen and (max-width: 768px) {
             .action-buttons {
                 grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .filter-lists {
+                flex-direction: column;
             }
         }
 
@@ -537,19 +580,27 @@
             <h2>Options</h2>
 
             <div class="filter-section">
-                <label>Domain Filters (domains to exclude):</label>
-                <div id="domain-filters">
-                    <!-- Domain filters will be added here dynamically -->
+                <label for="filter-input">Add filters to exclude specific domains or keywords:</label>
+                <div class="filter-input-group">
+                    <input type="text" id="filter-input" placeholder="e.g. example.com or admin">
+                    <button id="add-domain-filter">+ Domain</button>
+                    <button id="add-keyword-filter">+ Keyword</button>
                 </div>
-                <button class="add-filter-btn" id="add-domain-filter">+ Add Domain Filter</button>
-            </div>
-
-            <div class="filter-section">
-                <label>Keyword Filters (URLs containing these keywords will be excluded):</label>
-                <div id="keyword-filters">
-                    <!-- Keyword filters will be added here dynamically -->
+                
+                <div class="filter-lists">
+                    <div class="filter-list">
+                        <h3>Domain Filters</h3>
+                        <div id="domain-filters">
+                            <!-- Domain filters will be added here dynamically -->
+                        </div>
+                    </div>
+                    <div class="filter-list">
+                        <h3>Keyword Filters</h3>
+                        <div id="keyword-filters">
+                            <!-- Keyword filters will be added here dynamically -->
+                        </div>
+                    </div>
                 </div>
-                <button class="add-filter-btn" id="add-keyword-filter">+ Add Keyword Filter</button>
             </div>
 
             <div class="filter-section">
@@ -640,6 +691,7 @@
             const copyAllBtn = document.getElementById('copy-all');
             const clearResultsBtn = document.getElementById('clear-results');
             const applyFiltersBtn = document.getElementById('apply-filters');
+            const filterInput = document.getElementById('filter-input');
             const addDomainFilterBtn = document.getElementById('add-domain-filter');
             const addKeywordFilterBtn = document.getElementById('add-keyword-filter');
             const domainFilters = document.getElementById('domain-filters');
@@ -659,6 +711,8 @@
             // State variables
             let extractedLinks = [];
             let currentActiveTab = 'url-tab';
+            let domainFilterList = [];
+            let keywordFilterList = [];
 
             // Tab switching
             tabs.forEach(tab => {
@@ -684,17 +738,45 @@
 
             // Add domain filter
             addDomainFilterBtn.addEventListener('click', () => {
-                addFilterItem(domainFilters, 'domain-filter');
+                const value = filterInput.value.trim();
+                if (value) {
+                    addFilterToList(value, 'domain');
+                    filterInput.value = '';
+                    filterInput.focus();
+                } else {
+                    showWarning('Please enter a domain to filter');
+                }
             });
 
             // Add keyword filter
             addKeywordFilterBtn.addEventListener('click', () => {
-                addFilterItem(keywordFilters, 'keyword-filter');
+                const value = filterInput.value.trim();
+                if (value) {
+                    addFilterToList(value, 'keyword');
+                    filterInput.value = '';
+                    filterInput.focus();
+                } else {
+                    showWarning('Please enter a keyword to filter');
+                }
             });
 
-            // Add initial filter items
-            addFilterItem(domainFilters, 'domain-filter');
-            addFilterItem(keywordFilters, 'keyword-filter');
+            // Filter input Enter key handler
+            filterInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const value = this.value.trim();
+                    if (value) {
+                        if (value.includes('.')) {
+                            // If it contains a dot, assume it's a domain
+                            addFilterToList(value, 'domain');
+                        } else {
+                            // Otherwise, assume it's a keyword
+                            addFilterToList(value, 'keyword');
+                        }
+                        this.value = '';
+                    }
+                }
+            });
 
             // Extract links button click
             extractBtn.addEventListener('click', async () => {
@@ -812,24 +894,59 @@
             });
 
             // Functions
-            function addFilterItem(container, className) {
-                const filterItem = document.createElement('div');
-                filterItem.className = 'filter-item';
+            function addFilterToList(value, type) {
+                if (type === 'domain') {
+                    if (domainFilterList.includes(value)) {
+                        showWarning('This domain filter already exists');
+                        return;
+                    }
+                    domainFilterList.push(value);
+                    renderFilterList(domainFilterList, domainFilters, 'domain');
+                } else {
+                    if (keywordFilterList.includes(value)) {
+                        showWarning('This keyword filter already exists');
+                        return;
+                    }
+                    keywordFilterList.push(value);
+                    renderFilterList(keywordFilterList, keywordFilters, 'keyword');
+                }
+            }
+
+            function renderFilterList(list, container, type) {
+                container.innerHTML = '';
                 
-                const input = document.createElement('input');
-                input.type = 'text';
-                input.className = className;
-                input.placeholder = className === 'domain-filter' ? 'e.g. example.com' : 'e.g. admin';
+                if (list.length === 0) {
+                    const emptyMsg = document.createElement('div');
+                    emptyMsg.className = 'helper-text';
+                    emptyMsg.textContent = `No ${type} filters added yet`;
+                    container.appendChild(emptyMsg);
+                    return;
+                }
                 
-                const removeBtn = document.createElement('button');
-                removeBtn.textContent = '×';
-                removeBtn.addEventListener('click', () => {
-                    container.removeChild(filterItem);
+                list.forEach((value, index) => {
+                    const filterItem = document.createElement('div');
+                    filterItem.className = 'filter-item';
+                    
+                    const valueSpan = document.createElement('span');
+                    valueSpan.textContent = value;
+                    
+                    const removeBtn = document.createElement('button');
+                    removeBtn.textContent = '×';
+                    removeBtn.title = `Remove ${type} filter`;
+                    removeBtn.addEventListener('click', () => {
+                        if (type === 'domain') {
+                            domainFilterList.splice(index, 1);
+                            renderFilterList(domainFilterList, domainFilters, 'domain');
+                        } else {
+                            keywordFilterList.splice(index, 1);
+                            renderFilterList(keywordFilterList, keywordFilters, 'keyword');
+                        }
+                    });
+                    
+                    filterItem.appendChild(valueSpan);
+                    filterItem.appendChild(removeBtn);
+                    container.appendChild(filterItem);
                 });
-                
-                filterItem.appendChild(input);
-                filterItem.appendChild(removeBtn);
-                container.appendChild(filterItem);
             }
 
             async function extractLinksFromUrl(url) {
@@ -1118,32 +1235,22 @@
             }
 
             function filterLinks() {
-                // Get domain filters
-                const domains = Array.from(document.querySelectorAll('.domain-filter'))
-                    .map(input => input.value.trim())
-                    .filter(value => value.length > 0);
-                
-                // Get keyword filters
-                const keywords = Array.from(document.querySelectorAll('.keyword-filter'))
-                    .map(input => input.value.trim())
-                    .filter(value => value.length > 0);
-                
-                if (domains.length > 0 || keywords.length > 0) {
+                if (domainFilterList.length > 0 || keywordFilterList.length > 0) {
                     extractedLinks = extractedLinks.filter(link => {
                         try {
                             // Check against domain filters
-                            if (domains.length > 0) {
+                            if (domainFilterList.length > 0) {
                                 const url = new URL(normalizeUrl(link));
                                 const domain = url.hostname;
                                 
-                                if (domains.some(d => domain.includes(d))) {
+                                if (domainFilterList.some(d => domain.includes(d))) {
                                     return false;
                                 }
                             }
                             
                             // Check against keyword filters
-                            if (keywords.length > 0) {
-                                if (keywords.some(keyword => link.toLowerCase().includes(keyword.toLowerCase()))) {
+                            if (keywordFilterList.length > 0) {
+                                if (keywordFilterList.some(keyword => link.toLowerCase().includes(keyword.toLowerCase()))) {
                                     return false;
                                 }
                             }
@@ -1151,8 +1258,8 @@
                             return true;
                         } catch (e) {
                             // If URL parsing fails, just do a simple string check
-                            return !domains.some(d => link.includes(d)) && 
-                                   !keywords.some(k => link.toLowerCase().includes(k.toLowerCase()));
+                            return !domainFilterList.some(d => link.includes(d)) && 
+                                   !keywordFilterList.some(k => link.toLowerCase().includes(k.toLowerCase()));
                         }
                     });
                 }
@@ -1383,6 +1490,10 @@
                 successAlert.style.display = 'none';
                 warningAlert.style.display = 'none';
             }
+
+            // Initialize filter lists display
+            renderFilterList(domainFilterList, domainFilters, 'domain');
+            renderFilterList(keywordFilterList, keywordFilters, 'keyword');
         });
     </script>
 </body>
