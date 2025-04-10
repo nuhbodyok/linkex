@@ -6,16 +6,26 @@
     <title>Advanced Link Extractor</title>
     <style>
         :root {
-            --bg-primary: #121212;
-            --bg-secondary: #1e1e1e;
-            --bg-tertiary: #2a2a2a;
-            --text-primary: #e0e0e0;
-            --text-secondary: #aaaaaa;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #e9ecef;
+            --text-primary: #212529;
+            --text-secondary: #6c757d;
             --accent: #5D5CDE;
             --accent-hover: #4a49bb;
             --danger: #e74c3c;
             --success: #2ecc71;
             --warning: #f39c12;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-primary: #121212;
+                --bg-secondary: #1e1e1e;
+                --bg-tertiary: #2a2a2a;
+                --text-primary: #e0e0e0;
+                --text-secondary: #aaaaaa;
+            }
         }
 
         * {
@@ -25,13 +35,14 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
             background-color: var(--bg-primary);
             color: var(--text-primary);
             line-height: 1.6;
             padding: 1rem;
             max-width: 1200px;
             margin: 0 auto;
+            transition: all 0.3s ease;
         }
 
         header {
@@ -61,7 +72,8 @@
             background-color: var(--bg-secondary);
             border-radius: 8px;
             padding: 1rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
         }
 
         .input-panel, .options-panel {
@@ -108,6 +120,7 @@
             font-size: 16px;
             margin-bottom: 1rem;
             resize: vertical;
+            transition: all 0.3s ease;
         }
 
         textarea {
@@ -479,9 +492,75 @@
             margin-top: -0.5rem;
             margin-bottom: 0.5rem;
         }
+
+        .cors-options {
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: var(--bg-tertiary);
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .cors-options select {
+            width: 100%;
+            padding: 0.5rem;
+            background-color: var(--bg-tertiary);
+            border: 1px solid #333;
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 16px;
+            margin-bottom: 0.5rem;
+        }
+
+        .github-notice {
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 1rem;
+            border-top: 1px solid var(--bg-tertiary);
+        }
+
+        .github-link {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .github-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Fork button */
+        .github-corner {
+            position: absolute;
+            top: 0;
+            right: 0;
+            z-index: 10;
+        }
+        
+        .github-corner svg {
+            fill: var(--accent);
+            color: var(--bg-primary);
+        }
+        
+        @media screen and (max-width: 768px) {
+            .github-corner {
+                transform: scale(0.7);
+                transform-origin: top right;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- GitHub Corner -->
+    <a href="https://github.com/yourusername/link-extractor" class="github-corner" aria-label="View source on GitHub" target="_blank" rel="noopener noreferrer">
+        <svg width="80" height="80" viewBox="0 0 250 250" style="position: absolute; top: 0; right: 0" aria-hidden="true">
+            <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path>
+            <path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path>
+            <path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path>
+        </svg>
+    </a>
+
     <header>
         <h1>Advanced Link Extractor</h1>
         <p>Extract and manage links from URLs, text, or files</p>
@@ -502,8 +581,23 @@
             <div class="tab-content active" id="url-tab">
                 <label for="url-input">Enter URL to extract links from:</label>
                 <input type="url" id="url-input" placeholder="https://example.com" autocomplete="off">
-                <div class="helper-text">
-                    Note: Due to browser security restrictions, some URLs may not work directly.
+                
+                <div class="cors-options">
+                    <label for="cors-proxy">CORS Proxy (helps bypass browser security restrictions):</label>
+                    <select id="cors-proxy">
+                        <option value="none">No proxy (direct request)</option>
+                        <option value="corsanywhere" selected>CORS Anywhere (cors-anywhere.herokuapp.com)</option>
+                        <option value="allorigins">All Origins (allorigins.win)</option>
+                        <option value="corsproxy">CORS Proxy (corsproxy.io)</option>
+                        <option value="thingproxy">ThingProxy (thingproxy.freeboard.io)</option>
+                        <option value="custom">Custom Proxy URL</option>
+                    </select>
+                    <div id="custom-proxy-container" style="display: none;">
+                        <input type="text" id="custom-proxy-url" placeholder="Enter custom proxy URL (e.g., https://your-proxy.com/?url=)">
+                    </div>
+                    <div class="helper-text">
+                        Using a CORS proxy may help access restricted websites, but some proxies may have usage limits or be occasionally unavailable.
+                    </div>
                 </div>
             </div>
 
@@ -579,6 +673,14 @@
                         <span class="tooltiptext">Warning: This may be slow for many links and may not work for all URLs due to CORS restrictions</span>
                     </div>
                 </div>
+                
+                <div class="option-row">
+                    <label class="switch">
+                        <input type="checkbox" id="use-dark-mode">
+                        <span class="slider"></span>
+                    </label>
+                    <label for="use-dark-mode">Dark Mode</label>
+                </div>
             </div>
 
             <div class="filter-section">
@@ -616,6 +718,11 @@
         </div>
     </div>
 
+    <div class="github-notice">
+        <p>Advanced Link Extractor is open source and freely available on <a href="https://github.com/yourusername/link-extractor" class="github-link" target="_blank" rel="noopener noreferrer">GitHub</a>.</p>
+        <p>This tool runs entirely in your browser - no data is sent to any server.</p>
+    </div>
+
     <!-- Context menu -->
     <div class="context-menu" id="context-menu">
         <div class="context-menu-option" data-action="open">Open Link</div>
@@ -647,6 +754,7 @@
             const removeDuplicatesCheckbox = document.getElementById('remove-duplicates');
             const normalizeUrlsCheckbox = document.getElementById('normalize-urls');
             const verifyLinksCheckbox = document.getElementById('verify-links');
+            const darkModeCheckbox = document.getElementById('use-dark-mode');
             const sortBySelect = document.getElementById('sort-by');
             const loadingSpinner = document.getElementById('loading-spinner');
             const progressContainer = document.getElementById('progress-container');
@@ -655,10 +763,52 @@
             const successAlert = document.getElementById('success-alert');
             const warningAlert = document.getElementById('warning-alert');
             const contextMenu = document.getElementById('context-menu');
+            const corsProxySelect = document.getElementById('cors-proxy');
+            const customProxyContainer = document.getElementById('custom-proxy-container');
+            const customProxyUrl = document.getElementById('custom-proxy-url');
 
             // State variables
             let extractedLinks = [];
             let currentActiveTab = 'url-tab';
+
+            // Initialize dark mode based on system preference
+            function initDarkMode() {
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.body.classList.add('dark-mode');
+                    darkModeCheckbox.checked = true;
+                }
+
+                // Listen for changes in system preference
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+                    if (event.matches) {
+                        document.body.classList.add('dark-mode');
+                        darkModeCheckbox.checked = true;
+                    } else {
+                        document.body.classList.remove('dark-mode');
+                        darkModeCheckbox.checked = false;
+                    }
+                });
+            }
+
+            initDarkMode();
+
+            // Dark mode toggle
+            darkModeCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    document.body.classList.add('dark-mode');
+                } else {
+                    document.body.classList.remove('dark-mode');
+                }
+            });
+
+            // CORS proxy selection
+            corsProxySelect.addEventListener('change', function() {
+                if (this.value === 'custom') {
+                    customProxyContainer.style.display = 'block';
+                } else {
+                    customProxyContainer.style.display = 'none';
+                }
+            });
 
             // Tab switching
             tabs.forEach(tab => {
@@ -839,30 +989,99 @@
                 
                 try {
                     showProgressBar(true, 0);
-                    const response = await fetch(url, {
-                        headers: {
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-                        },
-                        mode: 'cors'
-                    });
                     
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    // Get selected CORS proxy
+                    const proxyType = corsProxySelect.value;
+                    let proxyUrl = '';
+                    
+                    switch(proxyType) {
+                        case 'none':
+                            proxyUrl = '';
+                            break;
+                        case 'corsanywhere':
+                            proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+                            break;
+                        case 'allorigins':
+                            // Using fetch mode with allorigins
+                            const allOriginsUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+                            const response = await fetch(allOriginsUrl);
+                            
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! Status: ${response.status}`);
+                            }
+                            
+                            showProgressBar(true, 50);
+                            const html = await response.text();
+                            showProgressBar(true, 75);
+                            const links = extractLinksFromHtml(html, url);
+                            showProgressBar(true, 100);
+                            
+                            return links;
+                        case 'corsproxy':
+                            proxyUrl = 'https://corsproxy.io/?';
+                            break;
+                        case 'thingproxy':
+                            proxyUrl = 'https://thingproxy.freeboard.io/fetch/';
+                            break;
+                        case 'custom':
+                            proxyUrl = customProxyUrl.value || '';
+                            break;
                     }
                     
-                    showProgressBar(true, 50);
-                    const html = await response.text();
-                    showProgressBar(true, 75);
-                    const links = extractLinksFromHtml(html, url);
-                    showProgressBar(true, 100);
-                    
-                    return links;
+                    // Handle non-allorigins proxies
+                    if (proxyType !== 'allorigins') {
+                        const response = await fetch(proxyUrl + url, {
+                            headers: {
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                            }
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        }
+                        
+                        showProgressBar(true, 50);
+                        const html = await response.text();
+                        showProgressBar(true, 75);
+                        const links = extractLinksFromHtml(html, url);
+                        showProgressBar(true, 100);
+                        
+                        return links;
+                    }
                 } catch (error) {
-                    showWarning(`Could not fetch URL directly due to browser security restrictions. Trying to extract from URL string itself.`);
+                    // If CORS proxy fails, try to extract directly from the URL
                     console.error('Error fetching URL:', error);
                     
-                    // Just extract the URL itself as a fallback
-                    return [url];
+                    // Try alternative methods:
+                    // 1. Try using a raw HTTP request through a service worker (if available)
+                    // 2. Use link-preview APIs if available
+                    // 3. As a last resort, just extract the URL itself
+                    
+                    showWarning(`Could not fetch URL: ${error.message}. Extracting from URL string itself.`);
+                    
+                    // Try to at least extract domain/path parts from the URL itself
+                    try {
+                        const parsedUrl = new URL(url);
+                        const possibleLinks = [];
+                        
+                        // Add the main URL
+                        possibleLinks.push(url);
+                        
+                        // Add domain root
+                        possibleLinks.push(`${parsedUrl.protocol}//${parsedUrl.hostname}`);
+                        
+                        // Add path segments
+                        const pathSegments = parsedUrl.pathname.split('/').filter(segment => segment.length > 0);
+                        for (let i = 1; i <= pathSegments.length; i++) {
+                            const partialPath = pathSegments.slice(0, i).join('/');
+                            possibleLinks.push(`${parsedUrl.protocol}//${parsedUrl.hostname}/${partialPath}`);
+                        }
+                        
+                        return possibleLinks;
+                    } catch (e) {
+                        // If all else fails, just return the URL itself
+                        return [url];
+                    }
                 } finally {
                     showProgressBar(false);
                 }
@@ -882,13 +1101,13 @@
                 let match;
                 const foundUrls = new Set();
                 
-                while (match = urlPattern.exec(text)) {
+                while ((match = urlPattern.exec(text)) !== null) {
                     if (isLikelyUrl(match[0])) {
                         foundUrls.add(match[0]);
                     }
                 }
                 
-                while (match = protocolUrlPattern.exec(text)) {
+                while ((match = protocolUrlPattern.exec(text)) !== null) {
                     foundUrls.add(match[0]);
                 }
                 
@@ -949,6 +1168,32 @@
                         } catch (e) {
                             // Skip invalid URLs
                         }
+                    }
+                });
+                
+                // Extract URLs from link tags
+                const linkTags = doc.querySelectorAll('link');
+                linkTags.forEach(link => {
+                    const href = link.getAttribute('href');
+                    if (href) {
+                        try {
+                            const fullUrl = resolveUrl(href, baseUrl);
+                            if (isLikelyUrl(fullUrl)) {
+                                links.push(fullUrl);
+                            }
+                        } catch (e) {
+                            // Skip invalid URLs
+                        }
+                    }
+                });
+                
+                // Extract URLs from meta tags (e.g., OpenGraph URLs)
+                const metaTags = doc.querySelectorAll('meta[content]');
+                metaTags.forEach(meta => {
+                    const content = meta.getAttribute('content');
+                    if (content && (content.includes('http://') || content.includes('https://'))) {
+                        const contentLinks = extractLinksFromText(content);
+                        links.push(...contentLinks);
                     }
                 });
                 
@@ -1188,12 +1433,52 @@
 
             async function verifyLink(link) {
                 try {
+                    // First try direct fetch with no-cors mode
                     const response = await fetch(link, {
                         method: 'HEAD',
                         mode: 'no-cors'
                     });
                     return true;
                 } catch (error) {
+                    // If direct fetch fails, try through CORS proxy if one is selected
+                    try {
+                        const proxyType = corsProxySelect.value;
+                        if (proxyType !== 'none') {
+                            let proxyUrl = '';
+                            
+                            switch(proxyType) {
+                                case 'corsanywhere':
+                                    proxyUrl = 'https://cors-anywhere.herokuapp.com/';
+                                    break;
+                                case 'allorigins':
+                                    // Using a different approach for allorigins
+                                    const allOriginsUrl = `https://api.allorigins.win/head?url=${encodeURIComponent(link)}`;
+                                    const response = await fetch(allOriginsUrl);
+                                    const data = await response.json();
+                                    return data.status && data.status.http_code < 400;
+                                case 'corsproxy':
+                                    proxyUrl = 'https://corsproxy.io/?';
+                                    break;
+                                case 'thingproxy':
+                                    proxyUrl = 'https://thingproxy.freeboard.io/fetch/';
+                                    break;
+                                case 'custom':
+                                    proxyUrl = customProxyUrl.value || '';
+                                    break;
+                            }
+                            
+                            if (proxyType !== 'allorigins' && proxyUrl) {
+                                const response = await fetch(proxyUrl + link, {
+                                    method: 'HEAD'
+                                });
+                                return response.ok;
+                            }
+                        }
+                    } catch (proxyError) {
+                        // If proxy verification fails, consider it not verified
+                        return false;
+                    }
+                    
                     return false;
                 }
             }
@@ -1380,6 +1665,106 @@
                 successAlert.style.display = 'none';
                 warningAlert.style.display = 'none';
             }
+            
+            // Check if we're running in GitHub Pages environment
+            function isGitHubPages() {
+                return window.location.hostname.includes('github.io');
+            }
+            
+            // Initialize GitHub-specific features
+            if (isGitHubPages()) {
+                // Update GitHub links to the actual repository
+                const githubLinks = document.querySelectorAll('.github-link, .github-corner');
+                const repoPath = window.location.pathname.split('/')[1]; // Get repository name from path
+                const username = window.location.hostname.split('.')[0]; // Get username from subdomain
+                
+                githubLinks.forEach(link => {
+                    link.href = `https://github.com/${username}/${repoPath || 'link-extractor'}`;
+                });
+            }
+            
+            // Save user preferences in localStorage
+            function savePreferences() {
+                // Only try to use localStorage if it's available
+                try {
+                    if (window.localStorage) {
+                        const preferences = {
+                            darkMode: darkModeCheckbox.checked,
+                            corsProxy: corsProxySelect.value,
+                            customProxyUrl: customProxyUrl.value,
+                            removeDuplicates: removeDuplicatesCheckbox.checked,
+                            normalizeUrls: normalizeUrlsCheckbox.checked,
+                            verifyLinks: verifyLinksCheckbox.checked,
+                            sortBy: sortBySelect.value
+                        };
+                        
+                        localStorage.setItem('linkExtractorPrefs', JSON.stringify(preferences));
+                    }
+                } catch (e) {
+                    console.warn('Could not save preferences:', e);
+                }
+            }
+            
+            // Load user preferences from localStorage
+            function loadPreferences() {
+                try {
+                    if (window.localStorage) {
+                        const savedPrefs = localStorage.getItem('linkExtractorPrefs');
+                        
+                        if (savedPrefs) {
+                            const prefs = JSON.parse(savedPrefs);
+                            
+                            // Apply saved preferences
+                            if (prefs.darkMode !== undefined) {
+                                darkModeCheckbox.checked = prefs.darkMode;
+                                if (prefs.darkMode) {
+                                    document.body.classList.add('dark-mode');
+                                }
+                            }
+                            
+                            if (prefs.corsProxy) {
+                                corsProxySelect.value = prefs.corsProxy;
+                                if (prefs.corsProxy === 'custom') {
+                                    customProxyContainer.style.display = 'block';
+                                    if (prefs.customProxyUrl) {
+                                        customProxyUrl.value = prefs.customProxyUrl;
+                                    }
+                                }
+                            }
+                            
+                            if (prefs.removeDuplicates !== undefined) {
+                                removeDuplicatesCheckbox.checked = prefs.removeDuplicates;
+                            }
+                            
+                            if (prefs.normalizeUrls !== undefined) {
+                                normalizeUrlsCheckbox.checked = prefs.normalizeUrls;
+                            }
+                            
+                            if (prefs.verifyLinks !== undefined) {
+                                verifyLinksCheckbox.checked = prefs.verifyLinks;
+                            }
+                            
+                            if (prefs.sortBy) {
+                                sortBySelect.value = prefs.sortBy;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Could not load preferences:', e);
+                }
+            }
+            
+            // Save preferences when they change
+            darkModeCheckbox.addEventListener('change', savePreferences);
+            corsProxySelect.addEventListener('change', savePreferences);
+            customProxyUrl.addEventListener('change', savePreferences);
+            removeDuplicatesCheckbox.addEventListener('change', savePreferences);
+            normalizeUrlsCheckbox.addEventListener('change', savePreferences);
+            verifyLinksCheckbox.addEventListener('change', savePreferences);
+            sortBySelect.addEventListener('change', savePreferences);
+            
+            // Load preferences on startup
+            loadPreferences();
         });
     </script>
 </body>
