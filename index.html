@@ -5,17 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Advanced Link Extractor</title>
     <style>
+        /* Define light mode variables */
         :root {
-            --bg-primary: #121212;
-            --bg-secondary: #1e1e1e;
-            --bg-tertiary: #2a2a2a;
-            --text-primary: #e0e0e0;
-            --text-secondary: #aaaaaa;
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --bg-tertiary: #e5e5e5;
+            --text-primary: #333333;
+            --text-secondary: #666666;
             --accent: #5D5CDE;
             --accent-hover: #4a49bb;
             --danger: #e74c3c;
             --success: #2ecc71;
             --warning: #f39c12;
+            --border-color: #dddddd;
+        }
+
+        /* Dark mode variables */
+        .dark {
+            --bg-primary: #121212;
+            --bg-secondary: #1e1e1e;
+            --bg-tertiary: #2a2a2a;
+            --text-primary: #e0e0e0;
+            --text-secondary: #aaaaaa;
+            --border-color: #333333;
         }
 
         * {
@@ -32,6 +44,7 @@
             padding: 1rem;
             max-width: 1200px;
             margin: 0 auto;
+            transition: background-color 0.3s, color 0.3s;
         }
 
         header {
@@ -62,6 +75,7 @@
             border-radius: 8px;
             padding: 1rem;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s;
         }
 
         .input-panel, .options-panel {
@@ -83,11 +97,22 @@
             cursor: pointer;
             border-bottom: 2px solid transparent;
             transition: all 0.2s;
+            color: var(--text-secondary);
         }
 
         .tab.active {
             border-color: var(--accent);
             color: var(--accent);
+        }
+
+        .tab:hover:not(.active) {
+            background-color: var(--bg-tertiary);
+            border-radius: 4px 4px 0 0;
+        }
+
+        .tab:focus {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
         }
 
         .tab-content {
@@ -102,16 +127,23 @@
             width: 100%;
             padding: 0.75rem;
             background-color: var(--bg-tertiary);
-            border: 1px solid #333;
+            border: 1px solid var(--border-color);
             border-radius: 4px;
             color: var(--text-primary);
             font-size: 16px;
             margin-bottom: 1rem;
             resize: vertical;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        textarea:focus, input[type="text"]:focus, input[type="url"]:focus {
+            border-color: var(--accent);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(93, 92, 222, 0.3);
         }
 
         textarea {
-            min-height: 80px;
+            min-height: 100px;
         }
 
         label {
@@ -128,11 +160,20 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
-            transition: background-color 0.2s;
+            transition: background-color 0.2s, transform 0.1s;
         }
 
         button:hover {
             background-color: var(--accent-hover);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button:focus {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
         }
 
         button:disabled {
@@ -159,13 +200,14 @@
             display: inline-block;
             padding: 0.5rem 1rem;
             background-color: var(--bg-tertiary);
-            border: 1px solid #333;
+            border: 1px solid var(--border-color);
             border-radius: 4px;
             cursor: pointer;
             width: 100%;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            transition: background-color 0.3s, border-color 0.3s;
         }
 
         .filter-section {
@@ -183,7 +225,8 @@
             background-color: var(--bg-tertiary);
             border-radius: 4px;
             margin-right: 0.5rem;
-            border: 1px solid #333;
+            border: 1px solid var(--border-color);
+            transition: background-color 0.3s;
         }
 
         .filter-badge {
@@ -227,7 +270,8 @@
             padding: 0.5rem;
             background-color: var(--bg-tertiary);
             border-radius: 4px;
-            border: 1px solid #333;
+            border: 1px solid var(--border-color);
+            transition: background-color 0.3s, border-color 0.3s;
         }
         
         .filter-list h3 {
@@ -245,16 +289,18 @@
         .option-row label {
             margin-bottom: 0;
             margin-left: 0.5rem;
+            cursor: pointer;
         }
 
         .links-container {
             max-height: 500px;
             overflow-y: auto;
             margin-bottom: 1rem;
-            border: 1px solid var(--bg-tertiary);
+            border: 1px solid var(--border-color);
             border-radius: 4px;
             padding: 0.5rem;
             background-color: var(--bg-tertiary);
+            transition: background-color 0.3s, border-color 0.3s;
         }
 
         .links-list {
@@ -263,14 +309,19 @@
 
         .link-item {
             padding: 0.5rem;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid var(--border-color);
             word-break: break-all;
             position: relative;
             padding-right: 30px;
+            transition: background-color 0.2s;
         }
 
         .link-item:last-child {
             border-bottom: none;
+        }
+
+        .link-item:hover {
+            background-color: var(--bg-secondary);
         }
 
         .link-item a {
@@ -280,6 +331,11 @@
 
         .link-item a:hover {
             text-decoration: underline;
+        }
+
+        .link-item a:focus {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
         }
 
         .link-actions {
@@ -296,7 +352,7 @@
             font-size: 12px;
             background-color: transparent;
             color: var(--text-secondary);
-            border: 1px solid #333;
+            border: 1px solid var(--border-color);
         }
 
         .link-actions button:hover {
@@ -309,6 +365,7 @@
             background-color: var(--bg-tertiary);
             border-radius: 4px;
             font-size: 0.9rem;
+            transition: background-color 0.3s;
         }
 
         .action-buttons {
@@ -501,7 +558,7 @@
             position: absolute;
             z-index: 10;
             background-color: var(--bg-secondary);
-            border: 1px solid var(--bg-tertiary);
+            border: 1px solid var(--border-color);
             border-radius: 4px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
             display: none;
@@ -522,6 +579,23 @@
             margin-top: -0.5rem;
             margin-bottom: 0.5rem;
         }
+
+        select {
+            width: 100%;
+            padding: 0.5rem;
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 16px;
+            transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+        }
+
+        select:focus {
+            border-color: var(--accent);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(93, 92, 222, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -530,19 +604,19 @@
         <p>Extract and manage links from URLs, text, or files</p>
     </header>
 
-    <div class="alert alert-danger" id="error-alert"></div>
-    <div class="alert alert-success" id="success-alert"></div>
-    <div class="alert alert-warning" id="warning-alert"></div>
+    <div class="alert alert-danger" id="error-alert" role="alert"></div>
+    <div class="alert alert-success" id="success-alert" role="alert"></div>
+    <div class="alert alert-warning" id="warning-alert" role="alert"></div>
 
     <div class="container">
         <div class="panel input-panel">
-            <div class="input-tabs">
-                <div class="tab active" data-tab="url-tab">URL</div>
-                <div class="tab" data-tab="text-tab">Text</div>
-                <div class="tab" data-tab="file-tab">File</div>
+            <div class="input-tabs" role="tablist">
+                <div class="tab active" data-tab="url-tab" role="tab" tabindex="0" aria-selected="true" aria-controls="url-tab">URL</div>
+                <div class="tab" data-tab="text-tab" role="tab" tabindex="0" aria-selected="false" aria-controls="text-tab">Text</div>
+                <div class="tab" data-tab="file-tab" role="tab" tabindex="0" aria-selected="false" aria-controls="file-tab">File</div>
             </div>
 
-            <div class="tab-content active" id="url-tab">
+            <div class="tab-content active" id="url-tab" role="tabpanel">
                 <label for="url-input">Enter URL to extract links from:</label>
                 <input type="url" id="url-input" placeholder="https://example.com" autocomplete="off">
                 <div class="helper-text">
@@ -550,13 +624,13 @@
                 </div>
             </div>
 
-            <div class="tab-content" id="text-tab">
+            <div class="tab-content" id="text-tab" role="tabpanel">
                 <label for="text-input">Paste text containing links:</label>
                 <textarea id="text-input" placeholder="Paste your text here..."></textarea>
             </div>
 
-            <div class="tab-content" id="file-tab">
-                <label>Upload a file containing links:</label>
+            <div class="tab-content" id="file-tab" role="tabpanel">
+                <label for="file-input">Upload a file containing links:</label>
                 <div class="file-upload">
                     <span class="file-label" id="file-name">No file selected</span>
                     <input type="file" id="file-input" accept=".txt,.html,.htm,.md,.xml,.json">
@@ -567,7 +641,7 @@
             </div>
 
             <div class="progress-container" id="progress-container">
-                <div class="progress-bar" id="progress-bar"></div>
+                <div class="progress-bar" id="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
             </div>
 
             <button id="extract-btn" class="primary-btn">
@@ -675,7 +749,24 @@
     </div>
 
     <script>
+        // Initialize dark mode based on user preference
+        function initializeDarkMode() {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            }
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+                if (event.matches) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize dark mode
+            initializeDarkMode();
+            
             // DOM elements
             const tabs = document.querySelectorAll('.tab');
             const tabContents = document.querySelectorAll('.tab-content');
@@ -714,18 +805,42 @@
             let domainFilterList = [];
             let keywordFilterList = [];
 
-            // Tab switching
+            // Tab switching with keyboard accessibility
             tabs.forEach(tab => {
                 tab.addEventListener('click', () => {
-                    tabs.forEach(t => t.classList.remove('active'));
-                    tabContents.forEach(tc => tc.classList.remove('active'));
-                    
-                    tab.classList.add('active');
-                    const tabId = tab.getAttribute('data-tab');
-                    document.getElementById(tabId).classList.add('active');
-                    currentActiveTab = tabId;
+                    activateTab(tab);
+                });
+                
+                tab.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        activateTab(tab);
+                    }
                 });
             });
+            
+            function activateTab(tab) {
+                tabs.forEach(t => {
+                    t.classList.remove('active');
+                    t.setAttribute('aria-selected', 'false');
+                });
+                
+                tabContents.forEach(tc => tc.classList.remove('active'));
+                
+                tab.classList.add('active');
+                tab.setAttribute('aria-selected', 'true');
+                
+                const tabId = tab.getAttribute('data-tab');
+                const tabContent = document.getElementById(tabId);
+                tabContent.classList.add('active');
+                currentActiveTab = tabId;
+                
+                // Focus on the input field in the activated tab
+                const inputElement = tabContent.querySelector('input, textarea');
+                if (inputElement) {
+                    inputElement.focus();
+                }
+            }
 
             // File input handler
             fileInput.addEventListener('change', function() {
@@ -933,6 +1048,8 @@
                     const removeBtn = document.createElement('button');
                     removeBtn.textContent = '×';
                     removeBtn.title = `Remove ${type} filter`;
+                    removeBtn.setAttribute('aria-label', `Remove ${type} filter: ${value}`);
+                    
                     removeBtn.addEventListener('click', () => {
                         if (type === 'domain') {
                             domainFilterList.splice(index, 1);
@@ -956,27 +1073,34 @@
                 
                 try {
                     showProgressBar(true, 0);
-                    const response = await fetch(url, {
-                        headers: {
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-                        },
-                        mode: 'cors'
-                    });
                     
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    // First try with a direct fetch
+                    try {
+                        const response = await fetch(url, {
+                            headers: {
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                            },
+                            mode: 'cors'
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        }
+                        
+                        showProgressBar(true, 50);
+                        const html = await response.text();
+                        showProgressBar(true, 75);
+                        const links = extractLinksFromHtml(html, url);
+                        showProgressBar(true, 100);
+                        
+                        return links;
+                    } catch (directFetchError) {
+                        // If direct fetch fails, try a CORS proxy fallback
+                        throw directFetchError; // For now, just let it fail and handle in the catch block
                     }
-                    
-                    showProgressBar(true, 50);
-                    const html = await response.text();
-                    showProgressBar(true, 75);
-                    const links = extractLinksFromHtml(html, url);
-                    showProgressBar(true, 100);
-                    
-                    return links;
                 } catch (error) {
-                    showWarning(`Could not fetch URL directly due to browser security restrictions. Trying to extract from URL string itself.`);
                     console.error('Error fetching URL:', error);
+                    showWarning(`Could not fetch URL directly due to browser security restrictions. Extracting from URL string itself.`);
                     
                     // Just extract the URL itself as a fallback
                     return [url];
@@ -986,7 +1110,7 @@
             }
 
             function extractLinksFromText(text) {
-                // This is the function that's been improved to correctly identify actual URLs
+                // This is an improved function to correctly identify actual URLs
                 const links = [];
                 
                 // Better regex patterns for URL detection
@@ -1300,7 +1424,8 @@
                 try {
                     const response = await fetch(link, {
                         method: 'HEAD',
-                        mode: 'no-cors'
+                        mode: 'no-cors',
+                        cache: 'no-cache'
                     });
                     return true;
                 } catch (error) {
@@ -1338,6 +1463,7 @@
                     const copyBtn = document.createElement('button');
                     copyBtn.innerHTML = '📋';
                     copyBtn.title = 'Copy link';
+                    copyBtn.setAttribute('aria-label', 'Copy link');
                     copyBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
                         navigator.clipboard.writeText(link)
@@ -1348,6 +1474,7 @@
                     const removeBtn = document.createElement('button');
                     removeBtn.innerHTML = '✕';
                     removeBtn.title = 'Remove link';
+                    removeBtn.setAttribute('aria-label', 'Remove link');
                     removeBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
                         extractedLinks.splice(index, 1);
@@ -1437,6 +1564,7 @@
                 if (show) {
                     progressContainer.style.display = 'block';
                     progressBar.style.width = `${progress}%`;
+                    progressBar.setAttribute('aria-valuenow', progress);
                 } else {
                     progressContainer.style.display = 'none';
                 }
@@ -1491,6 +1619,13 @@
                 warningAlert.style.display = 'none';
             }
 
+            // Handle keyboard events for the context menu
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && contextMenu.style.display === 'block') {
+                    contextMenu.style.display = 'none';
+                }
+            });
+            
             // Initialize filter lists display
             renderFilterList(domainFilterList, domainFilters, 'domain');
             renderFilterList(keywordFilterList, keywordFilters, 'keyword');
