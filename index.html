@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Advanced link extractor - extract URLs from websites, text or files">
     <title>Advanced Link Extractor</title>
     <style>
         /* Define light mode variables */
@@ -49,6 +50,9 @@
 
         header {
             margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         h1 {
@@ -596,12 +600,87 @@
             outline: none;
             box-shadow: 0 0 0 2px rgba(93, 92, 222, 0.3);
         }
+        
+        /* GitHub corner */
+        .github-corner {
+            position: absolute;
+            top: 0;
+            right: 0;
+            fill: var(--accent);
+            color: var(--bg-primary);
+            transition: fill 0.3s;
+        }
+        
+        .github-corner:hover {
+            fill: var(--accent-hover);
+        }
+        
+        /* Advanced options toggle */
+        .advanced-toggle {
+            margin-top: 1rem;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            color: var(--text-secondary);
+        }
+        
+        .advanced-toggle .arrow {
+            margin-right: 5px;
+            transition: transform 0.3s;
+        }
+        
+        .advanced-toggle.open .arrow {
+            transform: rotate(90deg);
+        }
+        
+        .advanced-options {
+            margin-top: 0.5rem;
+            display: none;
+        }
+        
+        .advanced-options.visible {
+            display: block;
+        }
+        
+        /* CORS proxy select */
+        .cors-proxy-section {
+            margin-top: 0.5rem;
+        }
+        
+        /* For small screens, adjust the GitHub corner */
+        @media screen and (max-width: 768px) {
+            .github-corner {
+                position: relative;
+                display: inline-block;
+                width: 24px;
+                height: 24px;
+            }
+            
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .github-link {
+                margin-top: 0.5rem;
+            }
+        }
     </style>
 </head>
 <body>
     <header>
-        <h1>Advanced Link Extractor</h1>
-        <p>Extract and manage links from URLs, text, or files</p>
+        <div>
+            <h1>Advanced Link Extractor</h1>
+            <p>Extract and manage links from URLs, text, or files</p>
+        </div>
+        <div class="github-link">
+            <a href="https://github.com/yourusername/link-extractor" target="_blank" rel="noopener noreferrer" title="View on GitHub">
+                <svg width="24" height="24" viewBox="0 0 16 16" class="github-icon">
+                    <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
+                </svg>
+            </a>
+        </div>
     </header>
 
     <div class="alert alert-danger" id="error-alert" role="alert"></div>
@@ -621,6 +700,24 @@
                 <input type="url" id="url-input" placeholder="https://example.com" autocomplete="off">
                 <div class="helper-text">
                     Note: Due to browser security restrictions, some URLs may not work directly.
+                </div>
+                
+                <div class="advanced-toggle" id="url-advanced-toggle">
+                    <span class="arrow">▶</span> Advanced Options
+                </div>
+                <div class="advanced-options" id="url-advanced-options">
+                    <div class="cors-proxy-section">
+                        <label for="cors-proxy">CORS Proxy (for accessing restricted sites):</label>
+                        <select id="cors-proxy">
+                            <option value="none">No proxy (try direct access first)</option>
+                            <option value="allorigins" selected>AllOrigins</option>
+                            <option value="corsproxy">CORS Proxy IO</option>
+                            <option value="both">Try both proxies</option>
+                        </select>
+                        <div class="helper-text">
+                            Using a CORS proxy may help access sites that block direct requests.
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -692,6 +789,14 @@
                         <span class="slider"></span>
                     </label>
                     <label for="normalize-urls">Normalize URLs (add https:// if missing)</label>
+                </div>
+
+                <div class="option-row">
+                    <label class="switch">
+                        <input type="checkbox" id="clean-punctuation" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <label for="clean-punctuation">Clean trailing punctuation (remove trailing commas, parentheses)</label>
                 </div>
 
                 <div class="option-row">
@@ -789,6 +894,7 @@
             const keywordFilters = document.getElementById('keyword-filters');
             const removeDuplicatesCheckbox = document.getElementById('remove-duplicates');
             const normalizeUrlsCheckbox = document.getElementById('normalize-urls');
+            const cleanPunctuationCheckbox = document.getElementById('clean-punctuation');
             const verifyLinksCheckbox = document.getElementById('verify-links');
             const sortBySelect = document.getElementById('sort-by');
             const loadingSpinner = document.getElementById('loading-spinner');
@@ -798,12 +904,21 @@
             const successAlert = document.getElementById('success-alert');
             const warningAlert = document.getElementById('warning-alert');
             const contextMenu = document.getElementById('context-menu');
+            const corsProxySelect = document.getElementById('cors-proxy');
+            const urlAdvancedToggle = document.getElementById('url-advanced-toggle');
+            const urlAdvancedOptions = document.getElementById('url-advanced-options');
 
             // State variables
             let extractedLinks = [];
             let currentActiveTab = 'url-tab';
             let domainFilterList = [];
             let keywordFilterList = [];
+
+            // Advanced options toggle
+            urlAdvancedToggle.addEventListener('click', () => {
+                urlAdvancedToggle.classList.toggle('open');
+                urlAdvancedOptions.classList.toggle('visible');
+            });
 
             // Tab switching with keyboard accessibility
             tabs.forEach(tab => {
@@ -1074,33 +1189,87 @@
                 try {
                     showProgressBar(true, 0);
                     
-                    // First try with a direct fetch
-                    try {
-                        const response = await fetch(url, {
-                            headers: {
-                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-                            },
-                            mode: 'cors'
-                        });
+                    const corsProxyOption = corsProxySelect.value;
+                    
+                    // Try direct fetch first if "none" or "both" is selected
+                    if (corsProxyOption === 'none' || corsProxyOption === 'both') {
+                        try {
+                            const response = await fetch(url, {
+                                headers: {
+                                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                                },
+                                mode: 'cors'
+                            });
+                            
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! Status: ${response.status}`);
+                            }
+                            
+                            showProgressBar(true, 50);
+                            const html = await response.text();
+                            showProgressBar(true, 75);
+                            const links = extractLinksFromHtml(html, url);
+                            showProgressBar(true, 100);
+                            
+                            return links;
+                        } catch (directFetchError) {
+                            // If direct fetch fails and "none" was selected, just return the URL itself
+                            if (corsProxyOption === 'none') {
+                                showWarning("Direct fetch failed due to CORS or network error. Try using a CORS proxy in advanced options.");
+                                return [url];
+                            }
+                            // Otherwise continue to proxy
+                            console.log("Direct fetch failed, trying CORS proxy...", directFetchError);
+                        }
+                    }
+                    
+                    // Try CORS proxies if direct fetch failed or proxy was explicitly selected
+                    const corsProxies = [];
+                    
+                    if (corsProxyOption === 'allorigins' || corsProxyOption === 'both') {
+                        corsProxies.push(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
+                    }
+                    
+                    if (corsProxyOption === 'corsproxy' || corsProxyOption === 'both') {
+                        corsProxies.push(`https://corsproxy.io/?${encodeURIComponent(url)}`);
+                    }
+                    
+                    // If we have proxies to try
+                    if (corsProxies.length > 0) {
+                        showProgressBar(true, 30);
+                        showWarning('Using CORS proxy to access the URL...');
                         
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        for (const proxyUrl of corsProxies) {
+                            try {
+                                const proxyResponse = await fetch(proxyUrl);
+                                
+                                if (!proxyResponse.ok) {
+                                    continue; // Try next proxy
+                                }
+                                
+                                showProgressBar(true, 60);
+                                const html = await proxyResponse.text();
+                                showProgressBar(true, 85);
+                                const links = extractLinksFromHtml(html, url);
+                                showProgressBar(true, 100);
+                                
+                                return links;
+                            } catch (proxyError) {
+                                console.error('Proxy fetch error:', proxyError);
+                                // Continue to next proxy
+                            }
                         }
                         
-                        showProgressBar(true, 50);
-                        const html = await response.text();
-                        showProgressBar(true, 75);
-                        const links = extractLinksFromHtml(html, url);
-                        showProgressBar(true, 100);
-                        
-                        return links;
-                    } catch (directFetchError) {
-                        // If direct fetch fails, try a CORS proxy fallback
-                        throw directFetchError; // For now, just let it fail and handle in the catch block
+                        // If we get here, all proxies failed
+                        throw new Error("All CORS proxies failed");
                     }
+                    
+                    // Fallback if somehow no proxies were selected
+                    return [url];
+                    
                 } catch (error) {
                     console.error('Error fetching URL:', error);
-                    showWarning(`Could not fetch URL directly due to browser security restrictions. Extracting from URL string itself.`);
+                    showWarning(`Could not fetch URL due to browser security restrictions. Extracting from URL string itself.`);
                     
                     // Just extract the URL itself as a fallback
                     return [url];
@@ -1110,34 +1279,64 @@
             }
 
             function extractLinksFromText(text) {
-                // This is an improved function to correctly identify actual URLs
+                // Much more comprehensive URL extraction pattern covering a wide range of URL formats
+                // This improved pattern looks for and matches URLs more effectively
+
+                // Create an array to store found URLs
                 const links = [];
                 
-                // Better regex patterns for URL detection
-                // 1. URLs with explicit protocols (most reliable)
-                const protocolUrlPattern = /(?:https?|ftp):\/\/(?:(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]|localhost|(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))(?::\d{1,5})?(?:\/[^\s]*)?/gi;
+                // Regular expression patterns for different types of URLs
                 
-                // 2. URLs without protocols (needs validation)
-                const domainUrlPattern = /(?:www\.)?[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+(?::\d{1,5})?(?:\/[^\s]*)?/gi;
+                // 1. URLs with explicit protocols (http, https, ftp, etc.)
+                const withProtocolPattern = /(?:https?|ftp|sftp|mailto|file|data|irc):\/\/(?:(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]|localhost|(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))(?::\d{1,5})?(?:\/(?:[^\s()<>]+|\((?:[^\s()<>]+|(?:\([^\s()<>]+\)))*\))*)?/gi;
                 
-                // First collect all possible matches
-                const urlCandidates = new Set();
+                // 2. URLs beginning with www.
+                const wwwPattern = /(?:^|[^\w/.])(?:www\.(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9])(?::\d{1,5})?(?:\/(?:[^\s()<>]+|\((?:[^\s()<>]+|(?:\([^\s()<>]+\)))*\))*)?(?:[^\s`!()[\]{};:'".,<>?«»""''])?/gi;
                 
-                // Add URLs with protocols (highly likely to be valid)
+                // 3. Simple domain names with common TLDs
+                const domainPattern = /(?:^|[^\w/.])([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.(?:com|net|org|edu|gov|mil|io|co|ai|app|dev|biz|info|online|tech|site|xyz|me|tv|cc|uk|us|ca|au|de|jp|fr|ru|ch|it|nl|se|no|es|pl))(?::\d{1,5})?(?:\/(?:[^\s()<>]+|\((?:[^\s()<>]+|(?:\([^\s()<>]+\)))*\))*)?(?:[^\s`!()[\]{};:'".,<>?«»""''])?/gi;
+                
+                // Process URLs with protocols
                 let match;
-                while ((match = protocolUrlPattern.exec(text)) !== null) {
-                    urlCandidates.add(match[0]);
+                while ((match = withProtocolPattern.exec(text)) !== null) {
+                    let url = match[0];
+                    if (cleanPunctuationCheckbox.checked) {
+                        url = cleanUrl(url);
+                    }
+                    links.push(url);
                 }
                 
-                // Add URLs without protocols (need validation)
-                while ((match = domainUrlPattern.exec(text)) !== null) {
-                    // Only add if it passes validation
-                    if (isValidUrl(match[0])) {
-                        urlCandidates.add(match[0]);
+                // Process URLs with www
+                while ((match = wwwPattern.exec(text)) !== null) {
+                    let url = match[0].trim();
+                    // Remove any non-word characters from the beginning
+                    url = url.replace(/^[^\w]+/, '');
+                    if (cleanPunctuationCheckbox.checked) {
+                        url = cleanUrl(url);
+                    }
+                    links.push(url);
+                }
+                
+                // Process domain names
+                while ((match = domainPattern.exec(text)) !== null) {
+                    let url = match[1];
+                    if (cleanPunctuationCheckbox.checked) {
+                        url = cleanUrl(url);
+                    }
+                    // Only add if it passes basic validation and isn't already included
+                    if (isValidUrl(url) && !links.includes(url)) {
+                        links.push(url);
                     }
                 }
                 
-                return Array.from(urlCandidates);
+                return links;
+            }
+            
+            // Helper function to clean URLs by removing trailing punctuation that shouldn't be part of the URL
+            function cleanUrl(url) {
+                // Remove common punctuation that might be at the end of a URL but not part of it
+                // This handles cases like "Check out example.com." or "Visit (https://example.com)"
+                return url.replace(/[.,;:!?)"'\]}>]+$/, '');
             }
             
             // Helper function to validate URLs without protocols
@@ -1148,8 +1347,8 @@
                 }
                 
                 // Check for valid TLD - this is a good indicator of a real URL
-                // Common TLDs - this list can be expanded
-                const validTldPattern = /\.(com|net|org|edu|gov|mil|io|co|us|uk|ca|au|de|jp|fr|ru|br|in|it|nl|es|ch|se|no|mx|nz|cn|kr|eu|info|biz|xyz|dev|app|tech|online|blog|site|store|me)$/i;
+                // Common TLDs - this is an expanded list
+                const validTldPattern = /\.(com|net|org|edu|gov|mil|io|co|us|uk|ca|au|de|jp|fr|ru|br|in|it|nl|es|ch|se|no|mx|nz|cn|kr|eu|info|biz|xyz|dev|app|tech|online|blog|site|store|me|tv|cc|shop|cloud|ai|mobi|media|email|games|zone)$/i;
                 
                 // If it's very short and doesn't have a protocol, it's likely not a URL
                 if (str.length < 4 && !str.includes('://')) {
@@ -1181,7 +1380,12 @@
                     const href = a.getAttribute('href');
                     if (href && !href.startsWith('javascript:') && !href.startsWith('#') && href !== '/') {
                         try {
-                            const resolvedUrl = resolveUrl(href, baseUrl);
+                            let resolvedUrl = resolveUrl(href, baseUrl);
+                            
+                            if (cleanPunctuationCheckbox.checked) {
+                                resolvedUrl = cleanUrl(resolvedUrl);
+                            }
+                            
                             // Only add if it seems like a valid URL
                             if (isValidUrl(resolvedUrl) || resolvedUrl.startsWith('http')) {
                                 links.push(resolvedUrl);
@@ -1198,7 +1402,12 @@
                     const src = tag.getAttribute('src');
                     if (src) {
                         try {
-                            const resolvedUrl = resolveUrl(src, baseUrl);
+                            let resolvedUrl = resolveUrl(src, baseUrl);
+                            
+                            if (cleanPunctuationCheckbox.checked) {
+                                resolvedUrl = cleanUrl(resolvedUrl);
+                            }
+                            
                             // Only add if it's a valid URL
                             if (isValidUrl(resolvedUrl) || resolvedUrl.startsWith('http')) {
                                 links.push(resolvedUrl);
@@ -1333,6 +1542,11 @@
                 
                 if (normalizeUrlsCheckbox.checked) {
                     links = links.map(normalizeUrl);
+                }
+                
+                // Clean URLs to remove trailing punctuation
+                if (cleanPunctuationCheckbox.checked) {
+                    links = links.map(cleanUrl);
                 }
                 
                 if (removeDuplicatesCheckbox.checked) {
