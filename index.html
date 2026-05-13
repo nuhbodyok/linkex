@@ -559,8 +559,8 @@
 
         /* Context menu */
         .context-menu {
-            position: absolute;
-            z-index: 10;
+            position: fixed;
+            z-index: 10000;
             background-color: var(--bg-secondary);
             border: 1px solid var(--border-color);
             border-radius: 4px;
@@ -1020,6 +1020,7 @@
                         case 'url-tab':
                             if (!urlInput.value.trim()) {
                                 showError('Please enter a URL');
+                                showLoading(false);
                                 return;
                             }
                             links = await extractLinksFromUrl(urlInput.value.trim());
@@ -1027,6 +1028,7 @@
                         case 'text-tab':
                             if (!textInput.value.trim()) {
                                 showError('Please enter some text');
+                                showLoading(false);
                                 return;
                             }
                             links = extractLinksFromText(textInput.value);
@@ -1034,14 +1036,17 @@
                         case 'file-tab':
                             if (!fileInput.files.length) {
                                 showError('Please select a file');
+                                showLoading(false);
                                 return;
                             }
                             links = await extractLinksFromFile(fileInput.files[0]);
                             break;
                     }
                     
-                    processExtractedLinks(links);
-                    showSuccess(`Successfully extracted ${links.length} links`);
+                    const prevCount = extractedLinks.length;
+                    await processExtractedLinks(links);
+                    const added = extractedLinks.length - prevCount;
+                    showSuccess(`Extracted ${links.length} link${links.length !== 1 ? 's' : ''} (${added} new added)`);
                 } catch (error) {
                     showError('Error extracting links: ' + error.message);
                     console.error(error);
@@ -1091,8 +1096,9 @@
             // Clear results
             clearResultsBtn.addEventListener('click', () => {
                 extractedLinks = [];
-                renderLinks();
-                updateStats();
+                linksList.innerHTML = '';
+                linksCount.textContent = '0';
+                statsContainer.textContent = 'No links extracted yet.';
                 showSuccess('Results cleared');
             });
 
@@ -1195,9 +1201,6 @@
                     if (corsProxyOption === 'none' || corsProxyOption === 'both') {
                         try {
                             const response = await fetch(url, {
-                                headers: {
-                                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-                                },
                                 mode: 'cors'
                             });
                             
@@ -1536,7 +1539,7 @@
                 }
             }
 
-            function processExtractedLinks(links) {
+            async function processExtractedLinks(links) {
                 // Apply further validation to filter out non-URLs
                 links = links.filter(link => isValidUrl(link) || link.match(/^https?:\/\//i));
                 
@@ -1560,6 +1563,31 @@
                 sortLinks();
                 renderLinks();
                 updateStats();
+                
+                // Verify links if enabled (after initial render)
+                if (verifyLinksCheckbox.checked && extractedLinks.length > 0) {
+                    showWarning('Verifying links… this may take a moment.');
+                    showProgressBar(true, 0);
+                    const total = extractedLinks.length;
+                    const verified = [];
+                    for (let i = 0; i < total; i++) {
+                        const ok = await verifyLink(extractedLinks[i]);
+                        if (ok) verified.push(extractedLinks[i]);
+                        showProgressBar(true, Math.round(((i + 1) / total) * 100));
+                    }
+                    showProgressBar(false);
+                    const removed = total - verified.length;
+                    extractedLinks = verified;
+                    filterLinks();
+                    sortLinks();
+                    renderLinks();
+                    updateStats();
+                    if (removed > 0) {
+                        showWarning(`${removed} unreachable link${removed !== 1 ? 's' : ''} removed after verification.`);
+                    } else {
+                        showSuccess('All links verified successfully.');
+                    }
+                }
             }
 
             function normalizeUrl(url) {
@@ -1608,10 +1636,10 @@
                 
                 switch(sortOption) {
                     case 'alphabetical':
-                        extractedLinks.sort();
+                        extractedLinks.sort((a, b) => a.localeCompare(b));
                         break;
                     case 'alphabetical-reverse':
-                        extractedLinks.sort().reverse();
+                        extractedLinks.sort((a, b) => b.localeCompare(a));
                         break;
                     case 'length':
                         extractedLinks.sort((a, b) => a.length - b.length);
@@ -1636,7 +1664,7 @@
 
             async function verifyLink(link) {
                 try {
-                    const response = await fetch(link, {
+                    await fetch(link, {
                         method: 'HEAD',
                         mode: 'no-cors',
                         cache: 'no-cache'
@@ -1691,7 +1719,11 @@
                     removeBtn.setAttribute('aria-label', 'Remove link');
                     removeBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        extractedLinks.splice(index, 1);
+                        const linkValue = link;
+                        const currentIndex = extractedLinks.indexOf(linkValue);
+                        if (currentIndex !== -1) {
+                            extractedLinks.splice(currentIndex, 1);
+                        }
                         renderLinks();
                         updateStats();
                     });
@@ -1705,12 +1737,7 @@
                     // Context menu for links
                     li.addEventListener('contextmenu', function(e) {
                         e.preventDefault();
-                        
-                        const rect = li.getBoundingClientRect();
-                        const x = e.clientX - rect.left;
-                        const y = e.clientY - rect.top;
-                        
-                        showContextMenu(x, y, index);
+                        showContextMenu(e.clientX, e.clientY, index);
                     });
                     
                     linksList.appendChild(li);
@@ -1719,8 +1746,15 @@
 
             function showContextMenu(x, y, linkIndex) {
                 contextMenu.style.display = 'block';
-                contextMenu.style.left = `${x}px`;
-                contextMenu.style.top = `${y}px`;
+                
+                // Clamp to viewport so menu doesn't go off-screen
+                const menuWidth = contextMenu.offsetWidth || 150;
+                const menuHeight = contextMenu.offsetHeight || 100;
+                const clampedX = Math.min(x, window.innerWidth - menuWidth - 4);
+                const clampedY = Math.min(y, window.innerHeight - menuHeight - 4);
+                
+                contextMenu.style.left = `${Math.max(0, clampedX)}px`;
+                contextMenu.style.top = `${Math.max(0, clampedY)}px`;
                 
                 // Clear previous event listeners
                 const options = contextMenu.querySelectorAll('.context-menu-option');
@@ -1743,7 +1777,11 @@
                 });
                 
                 contextMenu.querySelector('[data-action="remove"]').addEventListener('click', () => {
-                    extractedLinks.splice(linkIndex, 1);
+                    const linkValue = extractedLinks[linkIndex];
+                    const currentIndex = extractedLinks.indexOf(linkValue);
+                    if (currentIndex !== -1) {
+                        extractedLinks.splice(currentIndex, 1);
+                    }
                     renderLinks();
                     updateStats();
                     contextMenu.style.display = 'none';
