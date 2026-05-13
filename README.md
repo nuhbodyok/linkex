@@ -30,7 +30,7 @@ A powerful, client-side link extraction tool that runs entirely in the browser â
 
 ## ðŸš€ Live Demo
 
-Hosted on GitHub Pages: **[your-username.github.io/link-extractor](https://your-username.github.io/link-extractor)**
+Hosted on GitHub Pages: **[https://nuhbodyok.github.io/linkex/]**
 
 ---
 
